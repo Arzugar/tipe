@@ -30,7 +30,7 @@ def compute_descriptor_img(
                 for f in d:
                     outfile.write(
                         struct.pack("<f", f)
-                    )  # c'est très probablement des fottants 32 bits donc f est ok
+                    )  # c'est très probablement des flottants 32 bits donc f est ok
     else:
         return des
 
