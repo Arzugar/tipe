@@ -17,7 +17,8 @@
 - Pour évaluer : on a des classes et on regarde combien il en trouve dans la classe
 
 
-
 - Génération de jeux de test randoms à coup d'image-magic
+
+- Tests de perf sur ces jeux de tests là
 
 
