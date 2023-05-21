@@ -43,13 +43,12 @@ class Image:
                     chunk = file.read(4 * 128)
                     descriptor = struct.unpack("<" + ("f" * 128), chunk)
                     data[i] = descriptor
+                self.descr = data
     
     def compute_descr(self, save = False,
         outfile="", nfeatures=DEFAULT_N_FEATURES
     ):
         outfile = os.path.abspath(outfile)
-
-        self.size = nfeatures
 
         img = cv.imread(self.path)
 
@@ -57,12 +56,18 @@ class Image:
 
         sift = cv.SIFT_create(nfeatures=nfeatures) 
 
-        kp, des = sift.detectAndCompute(grayscale, None) 
-        self.descr = np.array(des[:nfeatures]) # faut espérer que j'en aurait tjr assez
-        
+        _, des = sift.detectAndCompute(grayscale, None) 
+
+
+        nbr_effectif_features = min(len(des), nfeatures)
+
+        self.descr = np.array(des[:nbr_effectif_features])
+
+        self.size = nbr_effectif_features
+
         self.descr.reshape((self.size,128)) # risque de bugs dans ce coin
         if save:
-            # format de sortie : n : nbr de descripteur : 4 bytes, suivit de 128 * n flottants, chacun sur 4 bytes
+            # format de sortie : n : nbr de descripteur : 4 bytes, entier signé, little endiean, suivit de 128 * n flottants, chacun sur 4 bytes
             with open(outfile, "wb") as outfile:
                 outfile.write(struct.pack("<l", self.size))
 
@@ -78,9 +83,9 @@ class Database:
     def __init__(self, dir_path : str = "", auto_init = True, verbose = False, nb_descr_per_img=DEFAULT_N_FEATURES) -> None:
         self.dir_path = os.path.abspath(dir_path)
         self.images = np.empty(0)
-        self.nb_descr_per_img = nb_descr_per_img
+        self.nb_descr_per_img = nb_descr_per_img # nombre avec lequel ça a été calculé, ça peut être moins si y'a pas assez de features
         self.name = dir_path.split('/')[-1]
-        self.descr_path = self.dir_path + "/../" + f"_descr_{self.nb_descr_per_img}" + self.name
+        self.descr_path = self.dir_path + "/../" + f"_descr_{self.nb_descr_per_img}_" + self.name
         if auto_init : 
             self.auto_init(verbose=verbose)
 
@@ -134,15 +139,12 @@ class Database:
         else :
             self.compute_descr(save=True, verbose=verbose)
 
+    def iter_descr(self):
+        for im in self.images :
+            for d in im.descr : 
+                yield (im, d)
 
 
-def test01():
-    p = "image_data/very_small/100000.jpg"
-    im = Image(p)
-    im.compute_descr()
-    print(im.name)
-    print(im.descr)
-    exit(0)
 
 
 if __name__ == "__main__":

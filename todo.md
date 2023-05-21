@@ -19,6 +19,4 @@
 
 - Génération de jeux de test randoms à coup d'image-magic
 
-- Tests de perf sur ces jeux de tests là
-
-
+- Tests de perf sur ces jeux de tests 
