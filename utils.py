@@ -155,7 +155,7 @@ class Database:
     def iter_descr(self):
         for im in self.images :
             for d in im.descr : 
-                yield (im, d)
+                yield (d,im)
 
 
 
