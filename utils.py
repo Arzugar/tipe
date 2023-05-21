@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 LoadError = Exception()
 
-DEFAULT_N_FEATURES = 2
+DEFAULT_N_FEATURES = 256
 
 
 class Image:
@@ -31,19 +31,18 @@ class Image:
             print("Cannot load, no descr_path provided")
             raise LoadError
         else:
-            with open(self.path, "rb") as file:
-                lg = file.read(4)
+            with open(self.descr_path, "rb") as file:
 
+                lg = file.read(4)
                 self.size = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
-                data = np.empty((self.size,128)) # un problème sur la taille ici
+
+                data = np.empty((self.size,128))
                 i = 0
-                while (chunk := file.read(4 * 128 * buffer_size)) != b"":
-                    descr_format = "<" + "f" * 128
-                    block = struct.iter_unpack(descr_format, chunk)
-                    for des in block:
-                        data[i] = (np.array(des))
-                        i+=1
+                for i in range(0, self.size): 
+                    chunk = file.read(4 * 128)
+                    descriptor = struct.unpack("<" + ("f" * 128), chunk)
+                    data[i] = descriptor
     
     def compute_descr(self, save = False,
         outfile="", nfeatures=DEFAULT_N_FEATURES
@@ -56,21 +55,16 @@ class Image:
 
         grayscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-        assert nfeatures != 1
-        sift = cv.SIFT_create(nfeatures=nfeatures-1) # en renvoie n+1 si n != 0, un max sinon
+        sift = cv.SIFT_create(nfeatures=nfeatures) 
 
-        _, des = sift.detectAndCompute(grayscale, None)
-        #print(des)
-        #print(len(des), len(des[0]))
-        self.descr = np.array(des)
-        #print(des)
-        #print(self.size)
-        self.descr.reshape((self.size,128)) # buggy dans ce coin
-
+        kp, des = sift.detectAndCompute(grayscale, None) 
+        self.descr = np.array(des[:nfeatures]) # faut espérer que j'en aurait tjr assez
+        
+        self.descr.reshape((self.size,128)) # risque de bugs dans ce coin
         if save:
             # format de sortie : n : nbr de descripteur : 4 bytes, suivit de 128 * n flottants, chacun sur 4 bytes
             with open(outfile, "wb") as outfile:
-                outfile.write(struct.pack("<l", len(des)))
+                outfile.write(struct.pack("<l", self.size))
 
                 for d in des:
                     for f in d:
@@ -109,7 +103,7 @@ class Database:
                 self.images[i].descr_path = self.descr_path + '/' + self.images[i].name
       
     def load_descriptors(self, verbose=False):
-        assert self.images != np.empty(0)
+        #assert self.images != np.empty(0)
         assert self.dir_path != None
         if verbose:
             it = tqdm(range(len(self.images)))
@@ -119,7 +113,7 @@ class Database:
             self.images[i].load_descr()
 
     def compute_descr(self, save : bool = False, verbose = False):
-        assert self.images != np.empty(0)
+        #assert self.images != np.empty(0)
         if verbose:
             it = tqdm(self.images)
         else:
@@ -146,7 +140,6 @@ def test01():
     p = "image_data/very_small/100000.jpg"
     im = Image(p)
     im.compute_descr()
-    print("ok")
     print(im.name)
     print(im.descr)
     exit(0)
@@ -169,4 +162,3 @@ if __name__ == "__main__":
         im.compute_descr()
     else :
         d = Database(entree, auto_init=True, verbose= True)
-        print("C'est fait")
