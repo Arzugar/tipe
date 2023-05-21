@@ -31,27 +31,31 @@ def query(data : Database, im : Image, search_func, im_k : int = 5, descr_k : in
 def basic_search(data : Database, query_descr, descr_k: int):
 
     h = []
-    for im, d in data.iter_descr() : 
+    for d,im in data.iter_descr() : 
         dist = la.norm(query_descr - d) # distance euclidiènne entre les deux vecteurs
         if (len (h) < descr_k):
-            hp.heappush(h, (-dist, im.name, im))
+            hp.heappush(h, (-dist, im))
         else :
-            hp.heappushpop(h, (-dist, im.name, im))
+            hp.heappushpop(h, (-dist, im))
     return [(-x,y) for x,y in h]
 
 
 
+def query_on_tree(data : Database, tree, descr_k, query_descr):
+    d, inds = tree.query(query_descr, k=descr_k,p=2) 
+    inds = map(lambda x : data.image_of_descr_index(x), inds)
+    return zip(d, inds)
 
-def build_kd_tree(database : Database): 
-    return KDTree(data=database.images, leafsize=10, balanced_tree=True) 
-
+    
 
 
 def kd_tree_search_func_gen(data : Database, verbose = False):
     print("Building tree...")
-    tree = build_kd_tree(data)
+    d = data.to_array()
+    tree = KDTree(d, leafsize=10, balanced_tree=True) 
     print("Tree built succesfully !")
-    return lambda _,query_descr, descr_k : tree.query(query_descr, k=descr_k,p=2)
+    return lambda _,query_descr, descr_k : query_on_tree(data, tree, descr_k, query_descr)
+    
     
 
 
@@ -64,11 +68,15 @@ if __name__ == "__main__" :
     d = Database(datapath, auto_init=True, verbose= True)
 
     query_im = d.images[0]
-    print(query_im.name)
-    for im,k in basic_search(d, query_im, verbose=True):
-        print(im.name, k)
+    print("Image recherchée : ",query_im.name)
+    
+    search_f = kd_tree_search_func_gen(d, verbose=True)
+    #search_f = basic_search
+    result = query(d, query_im, search_f,im_k=10, descr_k=50, verbose=True, weight= lambda x:1/(x*x + 0.1))
+    for r in result :
+        print(r[0].name, r[1]) 
+    
 
-        
 
 
 
