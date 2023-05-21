@@ -13,15 +13,15 @@ from tqdm import tqdm
 
 LoadError = Exception()
 
-DEFAULT_N_FEATURES = 256
+DEFAULT_N_FEATURES = 2
 
 
 class Image:
     def __init__(self, path: str, id : None |int =None , name : str | None =None, descr_path :str | None =None) -> None:
         self.path = os.path.abspath(path)
-        self.name = self.path.split("/")[-1]
+        self.name = self.path.split("/")[-1].split('.')[0]
         self.id = id
-        self.descr = None
+        self.descr = np.empty(0)
         self.nb_descr = None
         self.descr_path = descr_path
         self.size = DEFAULT_N_FEATURES
@@ -36,7 +36,7 @@ class Image:
 
                 self.size = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
-                data = np.empty((self.size,128))
+                data = np.empty((self.size,128)) # un problème sur la taille ici
                 i = 0
                 while (chunk := file.read(4 * 128 * buffer_size)) != b"":
                     descr_format = "<" + "f" * 128
@@ -44,7 +44,6 @@ class Image:
                     for des in block:
                         data[i] = (np.array(des))
                         i+=1
-    
     
     def compute_descr(self, save = False,
         outfile="", nfeatures=DEFAULT_N_FEATURES
@@ -57,11 +56,16 @@ class Image:
 
         grayscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-        sift = cv.SIFT_create(nfeatures=nfeatures)
+        assert nfeatures != 1
+        sift = cv.SIFT_create(nfeatures=nfeatures-1) # en renvoie n+1 si n != 0, un max sinon
 
         _, des = sift.detectAndCompute(grayscale, None)
+        #print(des)
+        #print(len(des), len(des[0]))
         self.descr = np.array(des)
-        self.descr.reshape((self.size,128))
+        #print(des)
+        #print(self.size)
+        self.descr.reshape((self.size,128)) # buggy dans ce coin
 
         if save:
             # format de sortie : n : nbr de descripteur : 4 bytes, suivit de 128 * n flottants, chacun sur 4 bytes
@@ -79,10 +83,10 @@ class Image:
 class Database:
     def __init__(self, dir_path : str = "", auto_init = True, verbose = False, nb_descr_per_img=DEFAULT_N_FEATURES) -> None:
         self.dir_path = os.path.abspath(dir_path)
-        self.images = None
+        self.images = np.empty(0)
         self.nb_descr_per_img = nb_descr_per_img
         self.name = dir_path.split('/')[-1]
-        self.descr_path = self.dir_path + "../" + f"_descr_{self.nb_descr_per_img}" + self.name
+        self.descr_path = self.dir_path + "/../" + f"_descr_{self.nb_descr_per_img}" + self.name
         if auto_init : 
             self.auto_init(verbose=verbose)
 
@@ -96,18 +100,16 @@ class Database:
             for f in os.listdir(self.dir_path)
             if os.path.isfile(self.dir_path + "/" + f)
         ]
-        self.images = np.empty((len(files_paths), self.nb_descr_per_img, 128), dtype=Image)
+        self.images = np.empty(len(files_paths), dtype=Image)
 
         descr_dir_exist = os.path.isdir(self.descr_path)
         for i,f_path in enumerate(files_paths):
             self.images[i] = Image(f_path)
             if descr_dir_exist :
                 self.images[i].descr_path = self.descr_path + '/' + self.images[i].name
-    
-            
-            
+      
     def load_descriptors(self, verbose=False):
-        assert self.images != None
+        assert self.images != np.empty(0)
         assert self.dir_path != None
         if verbose:
             it = tqdm(range(len(self.images)))
@@ -117,7 +119,7 @@ class Database:
             self.images[i].load_descr()
 
     def compute_descr(self, save : bool = False, verbose = False):
-        assert self.images != None
+        assert self.images != np.empty(0)
         if verbose:
             it = tqdm(self.images)
         else:
@@ -129,7 +131,6 @@ class Database:
             outfile = self.descr_path + '/' + im.name
                 
             im.compute_descr(outfile = outfile, save = save, nfeatures = self.nb_descr_per_img)
-
 
     def auto_init(self, verbose = False) :
         print("Initialisation ...")
@@ -146,11 +147,14 @@ def test01():
     im = Image(p)
     im.compute_descr()
     print("ok")
+    print(im.name)
+    print(im.descr)
     exit(0)
 
-if __name__ == "__main__":
-    test01()
 
+if __name__ == "__main__":
+
+    #test01()
     args = sys.argv
 
     if len(args) >= 2:
