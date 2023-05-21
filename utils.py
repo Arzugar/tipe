@@ -9,26 +9,36 @@ import os
 import sys
 import struct
 from tqdm import tqdm
-
+import functools
 
 LoadError = Exception()
 
 DEFAULT_N_FEATURES = 256
 
-
+@functools.total_ordering
 class Image:
     def __init__(self, path: str, id : None |int =None , name : str | None =None, descr_path :str | None =None) -> None:
         self.path = os.path.abspath(path)
         self.name = self.path.split("/")[-1].split('.')[0]
         self.id = id
         self.descr = np.empty(0)
-        self.nb_descr = None
         self.descr_path = descr_path
-        self.size = DEFAULT_N_FEATURES
+        self.nb_descr = DEFAULT_N_FEATURES
 
     def __hash__(self) -> int:
         return hash(self.path)
 
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Image) : 
+            return NotImplemented
+        return self.path == other.path and self.nb_descr == other.nb_descr
+    
+    def __lt__(self, other) : 
+        if not isinstance(other, Image) : 
+            return NotImplemented
+        return self.path < other.path and self.nb_descr < other.nb_descr
+    
     def load_descr(self, buffer_size=256):
         if self.descr_path == None:
             print("Cannot load, no descr_path provided")
@@ -37,12 +47,12 @@ class Image:
             with open(self.descr_path, "rb") as file:
 
                 lg = file.read(4)
-                self.size = struct.unpack("<l", lg)[0]
+                self.nb_descr = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
 
-                data = np.empty((self.size,128))
+                data = np.empty((self.nb_descr,128))
                 i = 0
-                for i in range(0, self.size): 
+                for i in range(0, self.nb_descr): 
                     chunk = file.read(4 * 128)
                     descriptor = struct.unpack("<" + ("f" * 128), chunk)
                     data[i] = descriptor
@@ -66,13 +76,13 @@ class Image:
 
         self.descr = np.array(des[:nbr_effectif_features])
 
-        self.size = nbr_effectif_features
+        self.nb_descr = nbr_effectif_features
 
-        self.descr.reshape((self.size,128)) # risque de bugs dans ce coin
+        self.descr.reshape((self.nb_descr,128)) # risque de bugs dans ce coin
         if save:
             # format de sortie : n : nbr de descripteur : 4 bytes, entier signé, little endiean, suivit de 128 * n flottants, chacun sur 4 bytes
             with open(outfile, "wb") as outfile:
-                outfile.write(struct.pack("<l", self.size))
+                outfile.write(struct.pack("<l", self.nb_descr))
 
                 for d in des:
                     for f in d:
