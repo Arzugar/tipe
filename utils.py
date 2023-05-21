@@ -26,6 +26,9 @@ class Image:
         self.descr_path = descr_path
         self.size = DEFAULT_N_FEATURES
 
+    def __hash__(self) -> int:
+        return hash(self.path)
+
     def load_descr(self, buffer_size=256):
         if self.descr_path == None:
             print("Cannot load, no descr_path provided")
@@ -111,7 +114,7 @@ class Database:
         #assert self.images != np.empty(0)
         assert self.dir_path != None
         if verbose:
-            it = tqdm(range(len(self.images)))
+            it = tqdm(range(len(self.images)), desc="Chargement des descripteurs")
         else:
             it = range(len(self.images))
         for i in it:
@@ -120,7 +123,7 @@ class Database:
     def compute_descr(self, save : bool = False, verbose = False):
         #assert self.images != np.empty(0)
         if verbose:
-            it = tqdm(self.images)
+            it = tqdm(self.images, desc="Calcul des descripteurs")
         else:
             it = self.images
         
@@ -132,7 +135,7 @@ class Database:
             im.compute_descr(outfile = outfile, save = save, nfeatures = self.nb_descr_per_img)
 
     def auto_init(self, verbose = False) :
-        print("Initialisation ...")
+        
         self.load_images()
         if os.path.isdir(self.descr_path) :
             self.load_descriptors(verbose=verbose)
