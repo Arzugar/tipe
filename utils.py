@@ -102,8 +102,6 @@ class Database:
         if auto_init : 
             self.auto_init(verbose=verbose)
 
-    def of_images(self, arr):
-        pass
 
     def load_images(self) : 
         assert self.dir_path != None
@@ -156,9 +154,23 @@ class Database:
         for im in self.images :
             for d in im.descr : 
                 yield (d,im)
+    
+    def to_array(self):
+        tot_nb_descr = (sum(x.nb_descr for x in self.images))
+         
+        arr= np.empty((tot_nb_descr, 128), dtype=np.float32)
+        for i, (d,_) in enumerate(self.iter_descr()):
+            arr[i] = d
 
-
-
+        return arr
+    
+    def image_of_descr_index(self, ind) : # détermine l'image associée au descripteur indexé ind (dans le tableau généré par to_array)
+        s = self.images[0].nb_descr
+        i = 0
+        while (s <= ind):
+            s += self.images[i].nb_descr
+            i+=1
+        return self.images[i]
 
 if __name__ == "__main__":
 
@@ -177,3 +189,4 @@ if __name__ == "__main__":
         im.compute_descr()
     else :
         d = Database(entree, auto_init=True, verbose= True)
+        a = d.to_array()
