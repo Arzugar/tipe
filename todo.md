@@ -9,7 +9,7 @@
 
 - Une solution simple qui permet déjà de tester l'ouverture de fichiers (style recherche linéaire)
 
-- kd trees
+- kd trees, faire une implémentation maison
 
 - Version approchée avec tables de hashage
 
