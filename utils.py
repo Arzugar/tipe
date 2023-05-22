@@ -13,7 +13,7 @@ import functools
 
 LoadError = Exception()
 
-DEFAULT_N_FEATURES = 256
+DEFAULT_N_FEATURES = 2048
 
 @functools.total_ordering
 class Image:
