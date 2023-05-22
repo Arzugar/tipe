@@ -10,10 +10,10 @@ if __name__ == "__main__" : # format de l'entrée : database, nombre de descript
 
     assert len(args) == 4
     datapath = args[1]
-    nb_descriptors = args[2]
+    nb_descriptors = int(args[2])
     sample_size = int(args[3])
 
-    d = Database(datapath, auto_init=True, verbose= True)
+    d = Database(datapath, auto_init=True, verbose= True, nb_descr_per_img=nb_descriptors)
     print("Taille du nuage de points : ", d.taille_nuage())
 
     total_good = 0
@@ -22,7 +22,7 @@ if __name__ == "__main__" : # format de l'entrée : database, nombre de descript
     for _ in tqdm(range(sample_size)):
         query_im = rd.choice(d.images)
 
-        result = query(d, query_im, search_f,im_k=5, descr_k=20, verbose=True, weight= lambda x:1/(x + 0.001))
+        result = query(d, query_im, search_f,im_k=5, descr_k=20, verbose=False, weight= lambda x:1/(x + 0.001))
         
         has_found_good_one = any([x[0].group_id == query_im.group_id for x in result])
         if has_found_good_one :

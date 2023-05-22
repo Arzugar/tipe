@@ -18,7 +18,8 @@ def second_closest_ratio(h, max_ratio):
 
 
 
-def query(data : Database, im : Image,
+def query(data : Database,
+          query_im : Image,
           search_func, im_k : int = 5,
           descr_k : int = 20, 
           verbose = False,
