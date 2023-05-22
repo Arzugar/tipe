@@ -1,3 +1,5 @@
+#!/bin/python3
+
 from utils import *
 from query_methods import * 
 
