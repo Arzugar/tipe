@@ -215,17 +215,22 @@ if __name__ == "__main__":
 
     #test01()
     args = sys.argv
-
+    nfeatures = DEFAULT_N_FEATURES
     if len(args) >= 2:
         entree = args[1]
         entree = os.path.abspath(entree)
         entree_type = os.path.isfile(entree)
+
     else:
         print("No input provided")
         exit(1)
+    
+    if len(args) == 3:
+        nfeatures = int(args[2])
+    
     if entree_type :
         im = Image(entree)
         im.compute_descr()
     else :
-        d = Database(entree, auto_init=True, verbose= True)
+        d = Database(entree, auto_init=True, verbose= True, nb_descr_per_img=nfeatures)
         a = d.to_array()
