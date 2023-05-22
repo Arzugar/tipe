@@ -11,6 +11,7 @@ if __name__ == "__main__" :
     sample_size = int(args[2])
 
     d = Database(datapath, auto_init=True, verbose= True)
+    print("Taille du nuage de points : ", d.taille_nuage())
 
     total_good = 0
 
