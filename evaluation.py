@@ -3,12 +3,13 @@ from query_methods import *
 
 
 
-if __name__ == "__main__" : 
+if __name__ == "__main__" : # format de l'entrée : database, nombre de descripteurs à utiliser, nombre d'itération de test à effectuer
     args = sys.argv
 
-    assert len(args) == 3
+    assert len(args) == 4
     datapath = args[1]
-    sample_size = int(args[2])
+    nb_descriptors = args[2]
+    sample_size = int(args[3])
 
     d = Database(datapath, auto_init=True, verbose= True)
     print("Taille du nuage de points : ", d.taille_nuage())
