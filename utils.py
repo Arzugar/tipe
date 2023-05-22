@@ -79,6 +79,11 @@ class Image:
             return NotImplemented
         return self.path < other.path and self.nb_descr < other.nb_descr
     
+    def has_same_group(self, other):
+        if not isinstance(other, Image) : 
+            return NotImplemented
+        return self.group_id == other.group_id
+
     def load_descr(self, buffer_size=256):
         if self.descr_path == None:
             print("Cannot load, no descr_path provided")
