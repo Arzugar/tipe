@@ -29,5 +29,5 @@ if __name__ == "__main__" : # format de l'entrée : database, nombre de descript
             total_good +=1
     print("Moyenne de retour : ",total_good/sample_size)
     with open("./eval_result.txt", "w") as save_file :
-        save_file.write(f"{total_good} / {sample_size} = {total_good/sample_size}")
+        save_file.write(f"exec : {args[0]}\n{total_good} / {sample_size} = {total_good/sample_size}\n")
     exit(0)
