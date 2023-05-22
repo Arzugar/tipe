@@ -200,6 +200,9 @@ class Database:
             for d in im.descr : 
                 yield (d,im)
     
+    def taille_nuage(self):
+        return (sum(x.nb_descr for x in self.images))
+
     def to_array(self):
         tot_nb_descr = (sum(x.nb_descr for x in self.images))
          
