@@ -13,7 +13,7 @@ if __name__ == "__main__" : # format de l'entrée : database, nombre de descript
     nb_descriptors = int(args[2])
     sample_size = int(args[3])
 
-    d = Database(datapath, auto_init=True, verbose= True, nb_descr_per_img=nb_descriptors)
+    d = Database(datapath, auto_init=True, verbose= False, nb_descr_per_img=nb_descriptors)
     print("Taille du nuage de points : ", d.taille_nuage())
 
     total_good = 0
