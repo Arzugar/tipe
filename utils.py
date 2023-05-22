@@ -1,3 +1,5 @@
+#!/bin/python3
+
 import struct
 import os
 from tqdm import tqdm

@@ -1,3 +1,4 @@
+#!/bin/python3
 from utils import *
 import numpy as np
 import numpy.linalg as la
