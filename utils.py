@@ -1,17 +1,54 @@
 #!/bin/python3
 
-import struct
-import os
-from tqdm import tqdm
-from math import sqrt
-import numpy as np
-import heapq
-import cv2 as cv
-import os
 import sys
-import struct
-from tqdm import tqdm
-import functools
+try:
+    import struct
+except ImportError:
+    print("Erreur : Impossible d'importer le module 'struct'.")
+    sys.exit(1)
+
+try:
+    import os
+except ImportError:
+    print("Erreur : Impossible d'importer le module 'os'.")
+    sys.exit(1)
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    print("Erreur : Impossible d'importer le module 'tqdm'.")
+    sys.exit(1)
+
+try:
+    from math import sqrt
+except ImportError:
+    print("Erreur : Impossible d'importer la fonction 'sqrt' depuis le module 'math'.")
+    sys.exit(1)
+
+try:
+    import numpy as np
+except ImportError:
+    print("Erreur : Impossible d'importer le module 'numpy'.")
+    sys.exit(1)
+
+try:
+    import heapq
+except ImportError:
+    print("Erreur : Impossible d'importer le module 'heapq'.")
+    sys.exit(1)
+
+try:
+    import cv2 as cv
+except ImportError:
+    print("Erreur : Impossible d'importer le module 'cv2' depuis le module 'cv'.")
+    sys.exit(1)
+
+try:
+    import functools
+except ImportError:
+    print("Erreur : Impossible d'importer le module 'functools'.")
+    sys.exit(1)
+
 
 LoadError = Exception()
 
