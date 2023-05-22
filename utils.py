@@ -56,13 +56,14 @@ DEFAULT_N_FEATURES = 2048
 
 @functools.total_ordering
 class Image:
-    def __init__(self, path: str, id : None |int =None , name : str | None =None, descr_path :str | None =None) -> None:
+    def __init__(self, path: str, name : str | None =None, descr_path :str | None =None) -> None:
         self.path = os.path.abspath(path)
         self.name = self.path.split("/")[-1].split('.')[0]
-        self.id = id
         self.descr = np.empty(0)
         self.descr_path = descr_path
         self.nb_descr = DEFAULT_N_FEATURES
+        self.group_id = int(self.name[:4])
+        self.id = int(self.name[4:])
 
     def __hash__(self) -> int:
         return hash(self.path)
