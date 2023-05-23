@@ -88,7 +88,7 @@ def kd_tree_search_func_gen(data: Database, verbose=False):
 def init_lsh(data: Database, verbose=False):
     s = Lsh()
     print("Preprosessing ...")
-    s.preprocess(data)
+    s.preprocess(data, verbose=verbose)
     print("Preprossesing finished !")
     return lambda _, query_descr, descr_k: s.query_knn(descr_k, query_descr)
 
@@ -104,8 +104,9 @@ if __name__ == "__main__":
     query_im = rd.choice(d.images)
     print("Image recherchée : ", query_im.name)
 
-    search_f = kd_tree_search_func_gen(d, verbose=True)
+    # search_f = kd_tree_search_func_gen(d, verbose=True)
     # search_f = basic_search
+    search_f = init_lsh(d, verbose=True)
     result = query(
         d,
         query_im,
@@ -115,5 +116,6 @@ if __name__ == "__main__":
         verbose=True,
         weight=lambda x: 1 / (x + 0.001),
     )
+    print("fini")
     for r in result:
         print(r[0].name, r[1])

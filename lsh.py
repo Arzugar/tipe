@@ -10,10 +10,18 @@ import numpy.random as rd
 rng = rd.default_rng()
 
 
-def datar_hash_family(r, d=128):
+def datar_hash_fun(r, d=128):
     a = rng.standard_normal(d)
     b = rng.uniform(low=0.0, high=r)
     return lambda x: np.floor((np.dot(x, a) + b) / r)
+
+
+def datar_hash_familly(
+    k: int,
+    r=100,
+    d=128,
+):
+    return [datar_hash_fun(r, d) for _ in range(k)]
 
 
 class HashTable:
@@ -23,8 +31,6 @@ class HashTable:
         self.table = {}
 
     def add(self, key: Hashable, value: Any) -> None:
-        print(self.hash_func)
-        x = self.hash_func(3)
         hash_value = self.hash_func(key)
 
         if hash_value not in self.table:
@@ -49,34 +55,38 @@ class HashTable:
 class Lsh:
     def __init__(
         self,
-        nb_fun_per_table: int = 10,
-        nb_tables: int = 20,
-        hash_fun_fam: Callable = datar_hash_family,
+        nb_fun_per_table: int = 1,
+        nb_tables: int = 1,
+        hash_fun_fam: Callable = datar_hash_familly,
     ) -> None:
         def concat_hash(
-            x, hash_functions: List[Callable[[Hashable], tuple]]
+            hash_functions: List[Callable[[Hashable], tuple]]
         ) -> Callable[[Hashable], tuple]:
-            return tuple([f(x) for f in hash_functions])
+            return lambda x: tuple([f(x) for f in hash_functions])
 
-        def lafonc(x):
-            return concat_hash(x, hash_fun_fam(nb_fun_per_table))
-
-        self.tables = [HashTable(lafonc) for i in range(nb_tables)]
+        self.tables = [
+            HashTable(concat_hash(hash_fun_fam(nb_fun_per_table)))
+            for _ in range(nb_tables)
+        ]
         # Pas certain que ça ai exactement la bonne distribution
 
-    def preprocess(self, database: Database):
-        print(self.tables[0].hash_func)
-        for descr, im in database.iter_descr():
+    def preprocess(self, database: Database, verbose=False):
+        if verbose:
+            it = tqdm(database.iter_descr())
+        else:
+            it = database.iter_descr()
+        for descr, im in it:
             for h_table in self.tables:
                 h_table.add(key=descr, value=im)
 
     def query(self, point):
-        subset = set()
+        subset = []
         for h_table in self.tables:
             bucket = h_table.get_bucket(point)
             if bucket != None:
                 for x in bucket:
-                    subset.add(x)
+                    subset.append(x)
+
         return subset
 
     def query_knn(self, k: int, point):
