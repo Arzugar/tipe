@@ -13,6 +13,7 @@ import functools
 import numpy.linalg as la
 import heapq as hp
 
+
 LoadError = Exception()
 
 DEFAULT_N_FEATURES = 2048
