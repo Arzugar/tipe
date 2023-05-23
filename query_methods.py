@@ -5,7 +5,8 @@ import numpy.linalg as la
 import heapq as hp
 import collections as cl
 from scipy.spatial import KDTree
-import random as rd
+
+import numpy.random as rd
 
 
 def second_closest_ratio(h, max_ratio):
@@ -18,6 +19,7 @@ def second_closest_ratio(h, max_ratio):
     return False
 
 
+# Fonction générique pour
 def query(
     data: Database,
     query_im: Image,
@@ -54,22 +56,16 @@ def query(
             continue
 
         for dist, im in h:
-            # incrémente si exist déjà, sinon met à 1 * weight
+            # incrémente si existe déjà, sinon met à 1 * weight
             histogram[im] = histogram.get(im, 0) + weight(dist)
 
     return sorted(histogram.items(), key=lambda x: x[1], reverse=True)[:im_k]
 
 
 def basic_search(data: Database, query_descr, descr_k: int):
-    h = []
-    for d, im in data.iter_descr():
-        # distance euclidiènne entre les deux vecteurs
-        dist = la.norm(query_descr - d)
-        if len(h) < descr_k:
-            hp.heappush(h, (-dist, im))
-        else:
-            hp.heappushpop(h, (-dist, im))
-    return [(-x, y) for x, y in h]
+    return basic_search_base(
+        data.iter_descr(), query_descr=query_descr, descr_k=descr_k
+    )
 
 
 def query_on_tree(data: Database, tree, descr_k, query_descr):

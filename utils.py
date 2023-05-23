@@ -1,55 +1,17 @@
 #!/bin/python3
 
 import sys
-
-try:
-    import struct
-except ImportError:
-    print("Erreur : Impossible d'importer le module 'struct'.")
-    sys.exit(1)
-
-try:
-    import os
-except ImportError:
-    print("Erreur : Impossible d'importer le module 'os'.")
-    sys.exit(1)
-
-try:
-    from tqdm import tqdm
-except ImportError:
-    print("Erreur : Impossible d'importer le module 'tqdm'.")
-    sys.exit(1)
-
-try:
-    from math import sqrt
-except ImportError:
-    print("Erreur : Impossible d'importer la fonction 'sqrt' depuis le module 'math'.")
-    sys.exit(1)
-
-try:
-    import numpy as np
-except ImportError:
-    print("Erreur : Impossible d'importer le module 'numpy'.")
-    sys.exit(1)
-
-try:
-    import heapq
-except ImportError:
-    print("Erreur : Impossible d'importer le module 'heapq'.")
-    sys.exit(1)
-
-try:
-    import cv2 as cv
-except ImportError:
-    print("Erreur : Impossible d'importer le module 'cv2' depuis le module 'cv'.")
-    sys.exit(1)
-
-try:
-    import functools
-except ImportError:
-    print("Erreur : Impossible d'importer le module 'functools'.")
-    sys.exit(1)
-
+from typing import Generator, Any
+import os
+from tqdm import tqdm
+import struct
+from math import sqrt
+import numpy as np
+import heapq
+import cv2 as cv
+import functools
+import numpy.linalg as la
+import heapq as hp
 
 LoadError = Exception()
 
@@ -201,7 +163,7 @@ class Database:
         else:
             self.compute_descr(save=True, verbose=verbose)
 
-    def iter_descr(self):
+    def iter_descr(self) -> Generator[tuple[int, Image], Any, None]:
         for im in self.images:
             for d in im.descr:
                 yield (d, im)
@@ -226,6 +188,18 @@ class Database:
             s += self.images[i].nb_descr
             i += 1
         return self.images[i]
+
+
+def basic_search_base(point_set, query_descr, descr_k: int):
+    h = []
+    for d, im in point_set:
+        # distance euclidiènne entre les deux vecteurs
+        dist = la.norm(query_descr - d)
+        if len(h) < descr_k:
+            hp.heappush(h, (-dist, im))
+        else:
+            hp.heappushpop(h, (-dist, im))
+    return [(-x, y) for x, y in h]
 
 
 if __name__ == "__main__":
