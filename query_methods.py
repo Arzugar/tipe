@@ -5,6 +5,7 @@ import numpy.linalg as la
 import heapq as hp
 import collections as cl
 from scipy.spatial import KDTree
+from lsh import *
 
 import numpy.random as rd
 
@@ -82,6 +83,14 @@ def kd_tree_search_func_gen(data: Database, verbose=False):
     return lambda _, query_descr, descr_k: query_on_tree(
         data, tree, descr_k, query_descr
     )
+
+
+def init_lsh(data: Database, verbose=False):
+    s = Lsh()
+    print("Preprosessing ...")
+    s.preprocess(data)
+    print("Preprossesing finished !")
+    return lambda _, query_descr, descr_k: s.query_knn(descr_k, query_descr)
 
 
 if __name__ == "__main__":
