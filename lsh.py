@@ -23,6 +23,8 @@ class HashTable:
         self.table = {}
 
     def add(self, key: Hashable, value: Any) -> None:
+        print(self.hash_func)
+        x = self.hash_func(3)
         hash_value = self.hash_func(key)
 
         if hash_value not in self.table:
@@ -46,18 +48,24 @@ class HashTable:
 
 class Lsh:
     def __init__(
-        self, k: int, L: int, hash_fun_fam: Callable = datar_hash_family
+        self,
+        nb_fun_per_table: int = 10,
+        nb_tables: int = 20,
+        hash_fun_fam: Callable = datar_hash_family,
     ) -> None:
         def concat_hash(
-            hash_functions: List[Callable[[Hashable], tuple]]
+            x, hash_functions: List[Callable[[Hashable], tuple]]
         ) -> Callable[[Hashable], tuple]:
-            return lambda x: tuple([f(x) for f in hash_functions])
+            return tuple([f(x) for f in hash_functions])
 
-        self.tables = [
-            HashTable(concat_hash(hash_fun_fam(k))) for i in range(L)
-        ]  # Pas certain que ça ai exactement la bonne distribution
+        def lafonc(x):
+            return concat_hash(x, hash_fun_fam(nb_fun_per_table))
+
+        self.tables = [HashTable(lafonc) for i in range(nb_tables)]
+        # Pas certain que ça ai exactement la bonne distribution
 
     def preprocess(self, database: Database):
+        print(self.tables[0].hash_func)
         for descr, im in database.iter_descr():
             for h_table in self.tables:
                 h_table.add(key=descr, value=im)
