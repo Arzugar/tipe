@@ -18,7 +18,7 @@ def datar_hash_fun(r, d=128):
 
 def datar_hash_familly(
     k: int,
-    r=100,
+    r=10,  # semble être une bonne approx
     d=128,
 ):
     return [datar_hash_fun(r, d) for _ in range(k)]
@@ -51,6 +51,12 @@ class HashTable:
             return self.table[hash_value]
         return None
 
+    def __repr__(self) -> str:
+        return (
+            "\n".join([f"{type(x), type(y)}" for x, y in self.table.items()])
+            + f"\nnb buckets = {len(self.table.keys())}"
+        )
+
 
 class Lsh:
     def __init__(
@@ -68,6 +74,7 @@ class Lsh:
             HashTable(concat_hash(hash_fun_fam(nb_fun_per_table)))
             for _ in range(nb_tables)
         ]
+        # print(self.tables, sep="\n")
         # Pas certain que ça ai exactement la bonne distribution
 
     def preprocess(self, database: Database, verbose=False):
@@ -78,6 +85,7 @@ class Lsh:
         for descr, im in it:
             for h_table in self.tables:
                 h_table.add(key=descr, value=im)
+        # print(self.tables, sep="\n")
 
     def query(self, point):
         subset = []

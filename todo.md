@@ -13,6 +13,10 @@
 
 - Version approchée avec tables de hashage
 
+- Pour LSH, de ce que j'ai compris : 
+    On fixe le facteur d'approx c
+    
+
 - Evaluation des perfs sur les jeux de test déjà prêts
 - Pour évaluer : on a des classes et on regarde combien il en trouve dans la classe
 

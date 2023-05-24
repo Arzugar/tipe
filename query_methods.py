@@ -115,6 +115,7 @@ if __name__ == "__main__":
         descr_k=20,
         verbose=True,
         weight=lambda x: 1 / (x + 0.001),
+        snd_closest_ratio=False,
     )
     print("fini")
     for r in result:

@@ -16,7 +16,7 @@ import heapq as hp
 
 LoadError = Exception()
 
-DEFAULT_N_FEATURES = 2048
+DEFAULT_N_FEATURES = 256
 
 
 @functools.total_ordering
