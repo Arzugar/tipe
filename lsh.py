@@ -64,6 +64,7 @@ class Lsh:
         nb_fun_per_table: int = 1,
         nb_tables: int = 1,
         hash_fun_fam: Callable = datar_hash_familly,
+        r=10,
     ) -> None:
         def concat_hash(
             hash_functions: List[Callable[[Hashable], tuple]]
@@ -71,7 +72,7 @@ class Lsh:
             return lambda x: tuple([f(x) for f in hash_functions])
 
         self.tables = [
-            HashTable(concat_hash(hash_fun_fam(nb_fun_per_table)))
+            HashTable(concat_hash(hash_fun_fam(nb_fun_per_table, r=r)))
             for _ in range(nb_tables)
         ]
         self.nb_tables = nb_tables

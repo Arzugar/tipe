@@ -88,9 +88,9 @@ def kd_tree_search_func_gen(data: Database, verbose=False):
 
 
 def init_lsh(
-    data: Database, verbose=False, nb_tables=10, nb_fun_per_table=2
+    data: Database, verbose=False, nb_tables=10, nb_fun_per_table=2, r=10
 ):  # augmenter le nbr de fonctions par table fait très vite augmenter le nombre de buckets
-    s = Lsh(nb_fun_per_table=nb_fun_per_table, nb_tables=nb_tables)
+    s = Lsh(nb_fun_per_table=nb_fun_per_table, nb_tables=nb_tables, r=r)
     print("Preprosessing ...")
     s.preprocess(data, verbose=verbose)
     print("Preprossesing finished !")

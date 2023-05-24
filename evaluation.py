@@ -2,6 +2,10 @@
 
 from utils import *
 from query_methods import *
+import itertools
+import time
+
+time.time()
 
 
 if __name__ == "__main__":
@@ -18,28 +22,58 @@ if __name__ == "__main__":
     )
     print("Taille du nuage de points : ", d.taille_nuage())
 
-    total_good = 0
+    descr_k_vals = range(10, 50, 10)
+    nb_tables_val = range(2, 20, 2)
+    nb_fun_per_table_val = range(1, 10, 1)
+    r_val = range(5, 20, 5)
 
-    search_f = kd_tree_search_func_gen(d, verbose=True)
-    for _ in tqdm(range(sample_size)):
-        query_im = rd.choice(d.images)
-        # détermine l'image associée
-        result = query(
+    for nb_tables, nb_fun_per_table, r in itertools.product(
+        nb_tables_val, nb_fun_per_table_val, r_val
+    ):
+        start_time = time.time()
+
+        # search_f = kd_tree_search_func_gen(d, verbose=True)
+        search_f = init_lsh(
             d,
-            query_im,
-            search_f,
-            im_k=5,
-            descr_k=20,
             verbose=False,
-            weight=lambda x: 1 / (x + 0.001),
+            r=r,
+            nb_fun_per_table=nb_fun_per_table,
+            nb_tables=nb_tables,
         )
 
-        has_found_good_one = any([x[0].group_id == query_im.group_id for x in result])
-        if has_found_good_one:
-            total_good += 1
-    print("Moyenne de retour : ", total_good / sample_size)
-    with open("./eval_result.txt", "w") as save_file:
-        save_file.write(
-            f"exec : {args[0]}\n{total_good} / {sample_size} = {total_good/sample_size}\n"
-        )
-    exit(0)
+        build_time = time.time() - start_time
+
+        for descr_k in descr_k_vals:
+            total_score = 0
+            total_query_time = 0
+
+            for _ in tqdm(range(sample_size)):
+                query_im = rd.choice(d.images)
+                # détermine l'image associée
+
+                start_time = time.time()
+                result = query(
+                    d,
+                    query_im,
+                    search_f,
+                    im_k=3,
+                    descr_k=descr_k,
+                    verbose=False,
+                    weight=lambda x: 1 / (x + 0.001),
+                    snd_closest_ratio=False,
+                )
+                total_query_time += time.time() - start_time
+                score = (
+                    sum(
+                        [1 if x[0].group_id == query_im.group_id else 0 for x in result]
+                    )
+                    / 3
+                )
+                total_score += score
+
+            print(
+                f"Param : descr_k : {descr_k} | nb_tables : {nb_tables} | nb_fun_per_table : {nb_fun_per_table} | r : {r}\n"
+            )
+            print(
+                f"Result: build_time : {build_time} | avg_score : {total_score/sample_size} | avg_query_time : {total_query_time/sample_size}\n"
+            )
