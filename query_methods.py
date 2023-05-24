@@ -91,9 +91,11 @@ def init_lsh(
     data: Database, verbose=False, nb_tables=10, nb_fun_per_table=2, r=10
 ):  # augmenter le nbr de fonctions par table fait très vite augmenter le nombre de buckets
     s = Lsh(nb_fun_per_table=nb_fun_per_table, nb_tables=nb_tables, r=r)
-    print("Preprosessing ...")
+    if verbose:
+        print("Preprosessing ...")
     s.preprocess(data, verbose=verbose)
-    print("Preprossesing finished !")
+    if verbose:
+        print("Preprossesing finished !")
     return s, lambda _, query_descr, descr_k: s.query_knn(descr_k, query_descr)
 
 
