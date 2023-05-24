@@ -23,10 +23,10 @@ if __name__ == "__main__":
     print("Taille du nuage de points : ", d.taille_nuage())
     print("Nombre de descr par image : ", nb_descriptors)
     print("Sample size : ", sample_size)
-    descr_k_vals = range(10, 50, 10)
-    nb_tables_val = range(2, 20, 2)
-    nb_fun_per_table_val = range(1, 5, 1)
-    r_val = range(5, 20, 5)
+    descr_k_vals = range(10, 60, 10)
+    nb_tables_val = range(2, 21, 2)
+    nb_fun_per_table_val = range(1, 6, 1)
+    r_val = range(5, 21, 5)
 
     for nb_tables, nb_fun_per_table, r in itertools.product(
         nb_tables_val, nb_fun_per_table_val, r_val
