@@ -169,6 +169,7 @@ class Database:
             for d in im.descr:
                 yield (d, im)
 
+    @functools.cache
     def taille_nuage(self):
         return sum(x.nb_descr for x in self.images)
 
@@ -191,12 +192,14 @@ class Database:
         return self.images[i]
 
 
-def basic_search_base(point_set, query_descr, descr_k: int):
+def basic_search_base(point_set, query_point, k: int):
     h = []
+    if len(point_set) == 0:
+        print("Empty Pointset")
     for d, im in point_set:
         # distance euclidiènne entre les deux vecteurs
-        dist = la.norm(query_descr - d)
-        if len(h) < descr_k:
+        dist = la.norm(query_point - d)
+        if len(h) < k:
             hp.heappush(h, (-dist, im))
         else:
             hp.heappushpop(h, (-dist, im))

@@ -74,12 +74,13 @@ class Lsh:
             HashTable(concat_hash(hash_fun_fam(nb_fun_per_table)))
             for _ in range(nb_tables)
         ]
+        self.nb_tables = nb_tables
         # print(self.tables, sep="\n")
         # Pas certain que ça ai exactement la bonne distribution
 
     def preprocess(self, database: Database, verbose=False):
         if verbose:
-            it = tqdm(database.iter_descr())
+            it = tqdm(database.iter_descr(), total=database.taille_nuage())
         else:
             it = database.iter_descr()
         for descr, im in it:
@@ -98,4 +99,13 @@ class Lsh:
         return subset
 
     def query_knn(self, k: int, point):
-        return basic_search_base(self.query(point), query_descr=point, descr_k=k)
+        point_set = self.query(point)
+        knn = basic_search_base(point_set=point_set, query_point=point, k=k)
+
+        return knn
+
+    def __repr__(self) -> str:
+        return "\n".join([str(h) for h in self.tables])
+
+    def nb_buck_per_table(self):
+        return sum([len(h.table.keys()) for h in self.tables]) / self.nb_tables

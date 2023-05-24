@@ -32,6 +32,7 @@ def query(
     snd_closest_ratio=True,
     max_ratio: float = 0.75,
     ignore_self=True,
+    vote_for_class=False,
 ):
     """
     @param data : La database dans laquelle chercher
@@ -58,15 +59,16 @@ def query(
 
         for dist, im in h:
             # incrémente si existe déjà, sinon met à 1 * weight
-            histogram[im] = histogram.get(im, 0) + weight(dist)
+            if vote_for_class:
+                histogram[im.group_id] = histogram.get(im, 0) + weight(dist)
+            else:
+                histogram[im] = histogram.get(im, 0) + weight(dist)
 
     return sorted(histogram.items(), key=lambda x: x[1], reverse=True)[:im_k]
 
 
 def basic_search(data: Database, query_descr, descr_k: int):
-    return basic_search_base(
-        data.iter_descr(), query_descr=query_descr, descr_k=descr_k
-    )
+    return basic_search_base(data.iter_descr(), query_point=query_descr, k=descr_k)
 
 
 def query_on_tree(data: Database, tree, descr_k, query_descr):
@@ -85,12 +87,14 @@ def kd_tree_search_func_gen(data: Database, verbose=False):
     )
 
 
-def init_lsh(data: Database, verbose=False):
-    s = Lsh()
+def init_lsh(
+    data: Database, verbose=False, nb_tables=10, nb_fun_per_table=2
+):  # augmenter le nbr de fonctions par table fait très vite augmenter le nombre de buckets
+    s = Lsh(nb_fun_per_table=nb_fun_per_table, nb_tables=nb_tables)
     print("Preprosessing ...")
     s.preprocess(data, verbose=verbose)
     print("Preprossesing finished !")
-    return lambda _, query_descr, descr_k: s.query_knn(descr_k, query_descr)
+    return s, lambda _, query_descr, descr_k: s.query_knn(descr_k, query_descr)
 
 
 if __name__ == "__main__":
@@ -101,12 +105,36 @@ if __name__ == "__main__":
     # impath = args[2]
     d = Database(datapath, auto_init=True, verbose=True)
 
+    print("Nombre de points du nuage : ", d.taille_nuage())
+
     query_im = rd.choice(d.images)
-    print("Image recherchée : ", query_im.name)
+    print("Classe de l'image recherchée : ", query_im.group_id)
 
     # search_f = kd_tree_search_func_gen(d, verbose=True)
     # search_f = basic_search
-    search_f = init_lsh(d, verbose=True)
+
+    l, search_f = init_lsh(
+        d,
+        verbose=True,
+    )
+    print(l.nb_buck_per_table())
+
+    result = query(
+        d,
+        query_im,
+        search_f,
+        im_k=1,
+        descr_k=50,  # bug : si le nombre de tables est >= descr_k , aucun voisins ne sont trouvés
+        verbose=True,
+        weight=lambda x: 1 / (x + 0.001),
+        snd_closest_ratio=False,
+        ignore_self=True,
+    )
+    print(result[0][0].group_id)
+    search_f = kd_tree_search_func_gen(d, verbose=True)
+
+    # search_f = basic_search
+    # search_f = init_lsh(d, verbose=True)
     result = query(
         d,
         query_im,
@@ -115,8 +143,8 @@ if __name__ == "__main__":
         descr_k=20,
         verbose=True,
         weight=lambda x: 1 / (x + 0.001),
-        snd_closest_ratio=False,
+        snd_closest_ratio=True,
     )
-    print("fini")
+
     for r in result:
         print(r[0].name, r[1])
