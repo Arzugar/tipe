@@ -76,10 +76,12 @@ class Lsh:
             for _ in range(nb_tables)
         ]
         self.nb_tables = nb_tables
+        self.total_sub_query_size = 0
         # print(self.tables, sep="\n")
         # Pas certain que ça ai exactement la bonne distribution
 
     def preprocess(self, database: Database, verbose=False):
+        self.database = database
         if verbose:
             it = tqdm(database.iter_descr(), total=database.taille_nuage())
         else:
@@ -102,7 +104,7 @@ class Lsh:
     def query_knn(self, k: int, point):
         point_set = self.query(point)
         knn = basic_search_base(point_set=point_set, query_point=point, k=k)
-
+        self.total_sub_query_size += len(point_set)
         return knn
 
     def __repr__(self) -> str:
@@ -110,3 +112,6 @@ class Lsh:
 
     def nb_buck_per_table(self):
         return sum([len(h.table.keys()) for h in self.tables]) / self.nb_tables
+
+    """ def avg_nb_elt_per_bucket(self):
+        total_indexed = self.nb_tables * self.database.taille_nuage() """
