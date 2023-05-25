@@ -164,7 +164,7 @@ class Database:
         else:
             self.compute_descr(save=True, verbose=verbose)
 
-    def iter_descr(self) -> Generator[tuple[int, Image], Any, None]:
+    def iter_descr(self) -> Generator[tuple[list[float], Image], Any, None]:
         for im in self.images:
             for d in im.descr:
                 yield (d, im)
