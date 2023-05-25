@@ -23,10 +23,10 @@ if __name__ == "__main__":
     print("Taille du nuage de points : ", d.taille_nuage())
     print("Nombre de descr par image : ", nb_descriptors)
     print("Sample size : ", sample_size)
-    descr_k_vals = range(10, 60, 10)
-    nb_tables_val = range(2, 21, 2)
-    nb_fun_per_table_val = range(1, 6, 1)
-    r_val = range(5, 21, 5)
+    descr_k_vals = [5, 20, 40]
+    nb_tables_val = [10, 20, 30]  # range(2, 21, 2)
+    nb_fun_per_table_val = [10]  # [1, 2, 3, 4]
+    r_val = [4]  # [1, 5, 10, 20]
 
     for nb_tables, nb_fun_per_table, r in itertools.product(
         nb_tables_val, nb_fun_per_table_val, r_val
@@ -47,6 +47,7 @@ if __name__ == "__main__":
         avg_bucket_per_tables = lsh_tables.nb_buck_per_table()
 
         for descr_k in descr_k_vals:
+            lsh_tables.total_sub_query_size = 0
             total_score = 0
             total_query_time = 0
 
@@ -59,24 +60,21 @@ if __name__ == "__main__":
                     d,
                     query_im,
                     search_f,
-                    im_k=3,
+                    im_k=1,
                     descr_k=descr_k,
                     verbose=False,
                     weight=lambda x: 1 / (x + 0.001),
                     snd_closest_ratio=False,
                 )
                 total_query_time += time.time() - start_time
-                score = (
-                    sum(
-                        [1 if x[0].group_id == query_im.group_id else 0 for x in result]
-                    )
-                    / 3
-                )
-                total_score += score
+                if len(result) > 0:
+                    score = 1 if result[0][0].group_id == query_im.group_id else 0
+                    total_score += score
+            avg_subquery_size = lsh_tables.total_sub_query_size / sample_size
 
             print(
                 f"Param : descr_k : {descr_k} | nb_tables : {nb_tables} | nb_fun_per_table : {nb_fun_per_table} | r : {r}"
             )
             print(
-                f"Result: build_time : {build_time} | avg_bucket_per_table : {avg_bucket_per_tables} | avg_score : {total_score/sample_size} | avg_query_time : {total_query_time/sample_size}\n"
+                f"Result: build_time : {build_time} | avg_bucket_per_table : {avg_bucket_per_tables} | avg_subquery_size : {avg_subquery_size} | avg_score : {total_score/sample_size} | avg_query_time : {total_query_time/sample_size}\n"
             )
