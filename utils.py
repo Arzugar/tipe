@@ -60,7 +60,7 @@ class Image:
                 self.nb_descr = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
 
-                data = np.empty((self.nb_descr, 128))
+                data = np.empty((self.nb_descr, 128), dtype=np.float32)
                 i = 0
                 for i in range(0, self.nb_descr):
                     chunk = file.read(4 * 128)
