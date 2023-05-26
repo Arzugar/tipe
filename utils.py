@@ -60,7 +60,10 @@ class Image:
                 self.nb_descr = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
 
-                data = np.empty((self.nb_descr, 128), dtype=np.float32)
+                data = np.empty((self.nb_descr, 128), dtype=np.float64)
+
+                # cv.Mat(data).convertTo(tmp, cv.CV_32F)
+
                 i = 0
                 for i in range(0, self.nb_descr):
                     chunk = file.read(4 * 128)
@@ -73,6 +76,7 @@ class Image:
 
         img = cv.imread(self.path)
 
+        # reduit = cv.cvtColor(img, cv.CV_32F)
         grayscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
         sift = cv.SIFT_create(nfeatures=nfeatures)
@@ -81,7 +85,7 @@ class Image:
 
         nbr_effectif_features = min(len(des), nfeatures)
 
-        self.descr = np.array(des[:nbr_effectif_features])
+        self.descr = np.array(des[:nbr_effectif_features], dtype=np.float64)
 
         self.nb_descr = nbr_effectif_features
 
@@ -176,7 +180,7 @@ class Database:
     def to_array(self):
         tot_nb_descr = sum(x.nb_descr for x in self.images)
 
-        arr = np.empty((tot_nb_descr, 128), dtype=np.float32)
+        arr = np.empty((tot_nb_descr, 128), dtype=np.float64)
         for i, (d, _) in enumerate(self.iter_descr()):
             arr[i] = d
 
