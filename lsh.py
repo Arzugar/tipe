@@ -30,7 +30,7 @@ class HashTable:
         self.size = 0
         self.table = {}
 
-    def add(self, key: Hashable, value: Any) -> None:
+    def add(self, key, value: Any) -> None:
         hash_value = self.hash_func(key)
 
         if hash_value not in self.table:
