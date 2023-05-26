@@ -18,6 +18,11 @@ LoadError = Exception()
 
 DEFAULT_N_FEATURES = 256
 
+DESCRIPTORS_SIZE = 128
+
+REVERSE_INDEX_DECAL_NEG = 10e-6
+REVERSE_INDEX_DECAL_POS = 10e6
+
 
 @functools.total_ordering
 class Image:
@@ -60,14 +65,16 @@ class Image:
                 self.nb_descr = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
 
-                data = np.empty((self.nb_descr, 128), dtype=np.float32)
+                data = np.empty(
+                    (self.nb_descr, DESCRIPTORS_SIZE + 1), dtype=np.float32
+                )  # la n+1 ième dimension sert d'index inverse
 
                 # cv.Mat(data).convertTo(tmp, cv.CV_32F)
 
                 i = 0
                 for i in range(0, self.nb_descr):
-                    chunk = file.read(4 * 128)
-                    descriptor = struct.unpack("<" + ("f" * 128), chunk)
+                    chunk = file.read(4 * DESCRIPTORS_SIZE)
+                    descriptor = struct.unpack("<" + ("f" * DESCRIPTORS_SIZE), chunk)[0]
                     data[i] = descriptor
                 self.descr = data
 
@@ -85,13 +92,21 @@ class Image:
 
         nbr_effectif_features = min(len(des), nfeatures)
 
-        self.descr = np.array(des[:nbr_effectif_features], dtype=np.float32)
+        self.descr = np.array(
+            des[:nbr_effectif_features]
+            + [
+                self.id * REVERSE_INDEX_DECAL_NEG
+            ],  # la dernière dimension sert d'index inversé
+            dtype=np.float32,
+        )
 
-        self.nb_descr = nbr_effectif_features
+        self.nb_descr = nbr_effectif_features + 1
 
-        self.descr.reshape((self.nb_descr, 128))  # risque de bugs dans ce coin
+        self.descr.reshape(
+            (self.nb_descr, DESCRIPTORS_SIZE + 1)
+        )  # risque de bugs dans ce coin
         if save:
-            # format de sortie : n : nbr de descripteur : 4 bytes, entier signé, little endiean, suivit de 128 * n flottants, chacun sur 4 bytes
+            # format de sortie : n : nbr de descripteur : 4 bytes, entier signé, little endiean, suivit de DESCRIPTORS_SIZE * n flottants, chacun sur 4 bytes
             with open(outfile, "wb") as outfile:
                 outfile.write(struct.pack("<l", self.nb_descr))
 
@@ -118,6 +133,8 @@ class Database:
         self.descr_path = (
             self.dir_path + "/../" + f"_descr_{self.nb_descr_per_img}_" + self.name
         )
+        self.taille_nuage = None
+
         if auto_init:
             self.auto_init(verbose=verbose)
 
@@ -167,21 +184,24 @@ class Database:
             self.load_descriptors(verbose=verbose)
         else:
             self.compute_descr(save=True, verbose=verbose)
+        self.compute_taille_nuage()
+        self.build_reverse_index()
 
-    def iter_descr(self) -> Generator[tuple[list[np.float32], Image], Any, None]:
+    def iter_descr_and_im(self) -> Generator[tuple[list[np.float32], Image], Any, None]:
         for im in self.images:
             for d in im.descr:
                 yield (d, im)
 
-    @functools.cache
-    def taille_nuage(self):
-        return sum(x.nb_descr for x in self.images)
+    def compute_taille_nuage(self):
+        if self.taille_nuage == None:
+            self.taille_nuage = sum(x.nb_descr for x in self.images)
+        return self.taille_nuage
 
     def to_array(self):
         tot_nb_descr = sum(x.nb_descr for x in self.images)
 
-        arr = np.empty((tot_nb_descr, 128), dtype=np.float32)
-        for i, (d, _) in enumerate(self.iter_descr()):
+        arr = np.empty((tot_nb_descr, DESCRIPTORS_SIZE + 1), dtype=np.float32)
+        for i, (d, _) in enumerate(self.iter_descr_and_im()):
             arr[i] = d
 
         return arr
@@ -194,6 +214,16 @@ class Database:
             s += self.images[i].nb_descr
             i += 1
         return self.images[i]
+
+    def build_reverse_index(self):
+        self.reverse_index = {}
+        for im in self.images:
+            self.reverse_index[im.id] = im
+
+    def reverse_descr_index(self, descr):
+        # utilise la dernière dimension comme index inverse
+        im_id = int(descr[DESCRIPTORS_SIZE + 1] * REVERSE_INDEX_DECAL_POS)
+        return self.reverse_index[im_id]
 
 
 def basic_search_base(point_set, query_point, k: int):
