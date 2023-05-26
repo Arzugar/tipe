@@ -60,7 +60,7 @@ class Image:
                 self.nb_descr = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
 
-                data = np.empty((self.nb_descr, 128), dtype=np.float64)
+                data = np.empty((self.nb_descr, 128), dtype=np.float32)
 
                 # cv.Mat(data).convertTo(tmp, cv.CV_32F)
 
@@ -85,7 +85,7 @@ class Image:
 
         nbr_effectif_features = min(len(des), nfeatures)
 
-        self.descr = np.array(des[:nbr_effectif_features], dtype=np.float64)
+        self.descr = np.array(des[:nbr_effectif_features], dtype=np.float32)
 
         self.nb_descr = nbr_effectif_features
 
@@ -168,7 +168,7 @@ class Database:
         else:
             self.compute_descr(save=True, verbose=verbose)
 
-    def iter_descr(self) -> Generator[tuple[list[float], Image], Any, None]:
+    def iter_descr(self) -> Generator[tuple[list[np.float32], Image], Any, None]:
         for im in self.images:
             for d in im.descr:
                 yield (d, im)
@@ -180,7 +180,7 @@ class Database:
     def to_array(self):
         tot_nb_descr = sum(x.nb_descr for x in self.images)
 
-        arr = np.empty((tot_nb_descr, 128), dtype=np.float64)
+        arr = np.empty((tot_nb_descr, 128), dtype=np.float32)
         for i, (d, _) in enumerate(self.iter_descr()):
             arr[i] = d
 
