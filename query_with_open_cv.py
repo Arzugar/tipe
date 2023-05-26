@@ -9,7 +9,7 @@ FLANN_INDEX_COMPOSITE = 3
 FLANN_INDEX_LSH = 6
 
 
-def init_matcher(d: Database, algo=0, index_param={}, search_param={}):
+def init_matcher(d: Database, index_param={}, search_param={}):
     m = cv.FlannBasedMatcher(index_param, search_param)
 
     for im in d.images:
@@ -34,10 +34,17 @@ if __name__ == "__main__":
     query_im = rd.choice(d.images)
     print("Classe de l'image recherchée : ", query_im.group_id)
 
-    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-
+    # index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+    index_params = dict(
+        algorithm=FLANN_INDEX_LSH,
+        trees=5,
+        table_number=6,  # 12
+        key_size=12,  # 20
+        multi_probe_level=1,
+    )
     m = init_matcher(d, index_param=index_params)
     m.train()
+
     print("ok !")
 
 
