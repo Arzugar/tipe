@@ -31,10 +31,33 @@ def init_index(d: Database, params=falconn_default_index_params):
     return index
 
 
-def falconn_query_image(index, query_im, k, nb_probes: int = 1):
-    index.set_num_probes(nb_probes)
-    distances, descripeurs = index.find_k_nearest_neighbors_batch(query_im.descr, k)
-    return distances, descripeurs
+def falconn_query_image(
+    index, query_im, k, specific_params={"num_probes": -1, "max_num_candidates": -1}
+):
+    num_probes = specific_params["num_probes"]
+    max_num_candidates = specific_params["max_num_candidates"]
+
+    distances, neighbors = [[]] * query_im.nb_descr, [[]] * query_im.nb_descr
+
+    query_object = index.construct_query_object(
+        num_probes=num_probes, max_num_candidates=max_num_candidates
+    )
+    print(type(query_object))
+
+    for i, d in enumerate(query_im.descr):
+        k_n = query_object.find_k_nearest_neighbors(d, k)
+        dists = [np.inner(x - d, x - d) for x in k_n]
+        distances[i] = dists
+        neighbors[i] = k_n
+
+    return distances, neighbors
 
 
+""" if __name__ == "__main__":
+    dpath = "./image_data/very_small"
+    d = Database(dpath)
+    index = init_index(d)
+    query_im = d.images[0]
+    r = falconn_query_image(index, query_im, 10)
+ """
 # a = query_object.get_candidates_with_duplicates(query_im.descr[0])
