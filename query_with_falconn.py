@@ -42,7 +42,6 @@ def falconn_query_image(
     query_object = index.construct_query_object(
         num_probes=num_probes, max_num_candidates=max_num_candidates
     )
-    print(type(query_object))
 
     for i, d in enumerate(query_im.descr):
         k_n = query_object.find_k_nearest_neighbors(d, k)
