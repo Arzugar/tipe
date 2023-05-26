@@ -1,7 +1,5 @@
 import falconn as fa
-import sys
 from utils import *
-import random as rd
 
 number_of_tables = 30
 
