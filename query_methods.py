@@ -66,7 +66,7 @@ def query_generic(
             continue
 
         for dist, descr_id in zip(dists, k_closests_descr):  # type: ignore
-            associated_im = d.image_of_descr_id(descr_id)
+            associated_im = data.image_of_descr_id(descr_id)
             if ignore_self and associated_im.id == query_im.id:
                 continue
 
