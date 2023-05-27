@@ -16,7 +16,7 @@ import heapq as hp
 
 LoadError = Exception()
 
-DEFAULT_N_FEATURES = 256
+DEFAULT_N_FEATURES = 2
 
 DESCRIPTORS_SIZE = 128
 
@@ -31,11 +31,11 @@ class Image:
     ) -> None:
         self.path = os.path.abspath(path)
         self.name = self.path.split("/")[-1].split(".")[0]
-        self.descr = np.empty(0)
+        self.descr = np.empty(0, dtype=np.float32)
         self.descr_path = descr_path
         self.nb_descr = DEFAULT_N_FEATURES
         self.group_id = int(self.name[:4])
-        self.id = int(self.name[4:])
+        self.id = 0
 
     def __hash__(self) -> int:
         return hash(self.path)
@@ -65,18 +65,19 @@ class Image:
                 self.nb_descr = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
 
-                data = np.empty(
+                self.descr = np.empty(
                     (self.nb_descr, DESCRIPTORS_SIZE + 1), dtype=np.float32
                 )  # la n+1 ième dimension sert d'index inverse
 
-                # cv.Mat(data).convertTo(tmp, cv.CV_32F)
-
-                i = 0
                 for i in range(0, self.nb_descr):
-                    chunk = file.read(4 * DESCRIPTORS_SIZE)
-                    descriptor = struct.unpack("<" + ("f" * DESCRIPTORS_SIZE), chunk)[0]
-                    data[i] = descriptor
-                self.descr = data
+                    descr_bytes_size = 4 * (DESCRIPTORS_SIZE + 1)
+                    chunk = file.read(descr_bytes_size)
+                    descriptor = np.array(
+                        struct.unpack("<" + ("f" * (DESCRIPTORS_SIZE + 1)), chunk),
+                        dtype=np.float32,
+                    )
+                    descriptor[-1] = self.id * REVERSE_INDEX_DECAL_NEG
+                    self.descr[i] = descriptor
 
     def compute_descr(self, save=False, outfile="", nfeatures=DEFAULT_N_FEATURES):
         outfile = os.path.abspath(outfile)
@@ -92,29 +93,29 @@ class Image:
 
         nbr_effectif_features = min(len(des), nfeatures)
 
-        self.descr = np.array(
-            des[:nbr_effectif_features]
-            + [
-                self.id * REVERSE_INDEX_DECAL_NEG
-            ],  # la dernière dimension sert d'index inversé
-            dtype=np.float32,
-        )
+        self.descr = np.append(
+            des[:nbr_effectif_features],
+            [[self.id * REVERSE_INDEX_DECAL_NEG]] * nbr_effectif_features,
+            axis=1,
+        )  # la dernière dimension sert d'index inversé
 
-        self.nb_descr = nbr_effectif_features + 1
+        self.nb_descr = nbr_effectif_features
 
         self.descr.reshape(
-            (self.nb_descr, DESCRIPTORS_SIZE + 1)
-        )  # risque de bugs dans ce coin
+            (self.nb_descr, DESCRIPTORS_SIZE + 1),
+        )
+
+        self.descr = np.ndarray.astype(self.descr, dtype=np.float32, copy=False)
         if save:
-            # format de sortie : n : nbr de descripteur : 4 bytes, entier signé, little endiean, suivit de DESCRIPTORS_SIZE * n flottants, chacun sur 4 bytes
+            # format de sortie : n : nbr de descripteur : 4 bytes, entier signé, little endiean, suivit de DESCRIPTORS_SIZE+1 * n flottants, chacun sur 4 bytes
             with open(outfile, "wb") as outfile:
                 outfile.write(struct.pack("<l", self.nb_descr))
 
-                for d in des:
+                for d in self.descr:
                     for f in d:
                         outfile.write(
                             struct.pack("<f", f)
-                        )  # c'est très probablement des flottants 32 bits donc f est ok
+                        )  # c'est des flottants 32 bits donc f est ok
 
 
 class Database:
@@ -150,6 +151,7 @@ class Database:
         descr_dir_exist = os.path.isdir(self.descr_path)
         for i, f_path in enumerate(files_paths):
             self.images[i] = Image(f_path)
+            self.images[i].id = i
             if descr_dir_exist:
                 self.images[i].descr_path = self.descr_path + "/" + self.images[i].name
 
@@ -185,7 +187,6 @@ class Database:
         else:
             self.compute_descr(save=True, verbose=verbose)
         self.compute_taille_nuage()
-        self.build_reverse_index()
 
     def iter_descr_and_im(self) -> Generator[tuple[list[np.float32], Image], Any, None]:
         for im in self.images:
@@ -207,7 +208,7 @@ class Database:
         return arr
 
     # détermine l'image associée au descripteur indexé ind (dans le tableau généré par to_array)
-    def image_of_descr_index(self, ind):
+    def image_of_descr_index(self, ind):  # à enlever
         s = self.images[0].nb_descr
         i = 0
         while s <= ind:
@@ -215,15 +216,10 @@ class Database:
             i += 1
         return self.images[i]
 
-    def build_reverse_index(self):
-        self.reverse_index = {}
-        for im in self.images:
-            self.reverse_index[im.id] = im
-
     def reverse_descr_index(self, descr):
         # utilise la dernière dimension comme index inverse
-        im_id = int(descr[DESCRIPTORS_SIZE + 1] * REVERSE_INDEX_DECAL_POS)
-        return self.reverse_index[im_id]
+        im_id = int(descr[DESCRIPTORS_SIZE] * REVERSE_INDEX_DECAL_POS)
+        return self.images[im_id]
 
 
 def basic_search_base(point_set, query_point, k: int):
