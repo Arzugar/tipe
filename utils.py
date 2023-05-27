@@ -16,12 +16,12 @@ import heapq as hp
 
 LoadError = Exception()
 
-DEFAULT_N_FEATURES = 2
+DEFAULT_N_FEATURES = 256
 
 DESCRIPTORS_SIZE = 128
 
-REVERSE_INDEX_DECAL_NEG = 10e-6
-REVERSE_INDEX_DECAL_POS = 10e6
+REVERSE_INDEX_DECAL_NEG = 10**-5
+REVERSE_INDEX_DECAL_POS = 10**5
 
 
 @functools.total_ordering
@@ -182,11 +182,13 @@ class Database:
 
     def auto_init(self, verbose=False):
         self.load_images()
+
         if os.path.isdir(self.descr_path):
             self.load_descriptors(verbose=verbose)
         else:
             self.compute_descr(save=True, verbose=verbose)
         self.compute_taille_nuage()
+        self.compute_array_of_descr()
 
     def iter_descr_and_im(self) -> Generator[tuple[list[np.float32], Image], Any, None]:
         for im in self.images:
@@ -203,8 +205,11 @@ class Database:
         self.array_of_descr = np.empty(
             (self.taille_nuage, DESCRIPTORS_SIZE + 1), dtype=np.float32
         )
-        for i, (d, _) in enumerate(self.iter_descr_and_im()):
-            self.array_of_descr[i] = d
+        i = 0
+        for im in self.images:
+            for d in im.descr:
+                self.array_of_descr[i] = d
+                i += 1
 
     # détermine l'image associée au descripteur indexé descr_id
 
@@ -213,9 +218,8 @@ class Database:
 
     def reverse_descr_index(self, descr) -> Image:
         # utilise la dernière dimension comme index inverse
-        print(descr)
-        print(type(descr))
-        im_id = int(descr[DESCRIPTORS_SIZE] * REVERSE_INDEX_DECAL_POS)
+        im_id = round(descr[DESCRIPTORS_SIZE] * REVERSE_INDEX_DECAL_POS)
+        # ici l'arrondi est peut-être pas une idée de fou
         return self.images[im_id]
 
 
