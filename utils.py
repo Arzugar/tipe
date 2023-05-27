@@ -208,13 +208,13 @@ class Database:
         return arr
 
     # détermine l'image associée au descripteur indexé ind (dans le tableau généré par to_array)
-    def image_of_descr_index(self, ind):  # à enlever
-        s = self.images[0].nb_descr
-        i = 0
-        while s <= ind:
-            s += self.images[i].nb_descr
-            i += 1
-        return self.images[i]
+    # def image_of_descr_index(self, ind):  # à enlever
+    #    s = self.images[0].nb_descr
+    #    i = 0
+    #    while s <= ind:
+    #        s += self.images[i].nb_descr
+    #        i += 1
+    #    return self.images[i]
 
     def reverse_descr_index(self, descr):
         # utilise la dernière dimension comme index inverse
