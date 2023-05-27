@@ -5,6 +5,7 @@ import numpy.linalg as la
 
 import numpy.random as rd
 from typing import List, Tuple
+from query_with_falconn import *
 
 
 def second_closest_ratio_test(
@@ -13,8 +14,9 @@ def second_closest_ratio_test(
     if len(closests) == 0:
         return True  # à voir si c'est le plus intelligent
     d1, first_im = dists[0], closests[0]
-    for d2, snd_descr in zip(dists[1:], closests[1:]):  # type: ignore
-        if first_im.group_id != d.reverse_descr_index(snd_descr).group_id:
+    for d2, snd_descr_id in zip(dists[1:], closests[1:]):  # type: ignore
+        snd_im = d.image_of_descr_id(snd_descr_id)
+        if first_im.group_id != snd_im.group_id:
             return d1 <= max_ratio * d2
     return False
 
@@ -26,7 +28,7 @@ def query(
     query_im: Image,
     search_func,
     index,
-    specific_params={},
+    specific_params=None,
     im_k: int = 5,
     descr_k: int = 20,
     verbose=False,
@@ -48,20 +50,18 @@ def query(
     histogram = dict()
     if verbose:
         print("Searching for voisins")
-    result: Tuple[List[List[np.float32]],] = search_func(
-        index, query_im, descr_k, specific_params
-    )
+    distances, k_closests = search_func(index, query_im, descr_k, specific_params)
     if verbose:
         print("Voisins trouvés\nVote en cours")
-    for dists, k_closests_descr in result:
+    for dists, k_closests_descr in zip(distances, k_closests):  # type: ignore
         # skip this descriptor if not relevant enought
         if snd_closest_ratio and not second_closest_ratio_test(
             data, dists, k_closests_descr, max_ratio
         ):
             continue
 
-        for dist, descr in zip(dists, k_closests_descr):
-            associated_im = d.reverse_descr_index(descr)
+        for dist, descr_id in zip(dists, k_closests_descr):  # type: ignore
+            associated_im = d.image_of_descr_id(descr_id)
             if ignore_self and associated_im.id == query_im.group_id:
                 continue
 
@@ -78,6 +78,7 @@ def query(
 
 
 if __name__ == "__main__":
+    rd.seed(1)
     args = sys.argv
 
     assert len(args) == 2
@@ -89,3 +90,10 @@ if __name__ == "__main__":
 
     query_im = rd.choice(d.images)
     print("Classe de l'image recherchée : ", query_im.group_id)
+
+    index = falconn_init_index(d)
+
+    r = query(
+        d, query_im, falconn_query_image, index, snd_closest_ratio=True, verbose=True
+    )
+    print(r)
