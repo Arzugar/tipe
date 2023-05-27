@@ -13,7 +13,7 @@ def second_closest_ratio_test(
 ):
     if len(closests) == 0:
         return True  # à voir si c'est le plus intelligent
-    d1, first_im = dists[0], closests[0]
+    d1, first_im = dists[0], d.image_of_descr_id(closests[0])
     for d2, snd_descr_id in zip(dists[1:], closests[1:]):  # type: ignore
         snd_im = d.image_of_descr_id(snd_descr_id)
         if first_im.group_id != snd_im.group_id:
