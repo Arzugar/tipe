@@ -24,7 +24,6 @@ fa.compute_number_of_hash_functions(18, falconn_default_index_params)
 
 def falconn_init_index(d: Database, params=falconn_default_index_params):
     index = fa.LSHIndex(params)
-
     index.setup(d.array_of_descr)
 
     return index
