@@ -4,7 +4,7 @@ from utils import *
 number_of_tables = 30
 
 falconn_default_index_params = fa.LSHConstructionParameters()
-falconn_default_index_params.dimension = 128
+falconn_default_index_params.dimension = DESCRIPTORS_SIZE + 1
 falconn_default_index_params.lsh_family = fa.LSHFamily.Hyperplane
 falconn_default_index_params.distance_function = fa.DistanceFunction.EuclideanSquared
 falconn_default_index_params.l = number_of_tables
@@ -22,20 +22,21 @@ falconn_default_index_params.storage_hash_table = (
 fa.compute_number_of_hash_functions(18, falconn_default_index_params)
 
 
-def init_index(d: Database, params=falconn_default_index_params):
-    print(params)
+def falconn_init_index(d: Database, params=falconn_default_index_params):
     index = fa.LSHIndex(params)
 
-    index.setup(d.to_array())
+    index.setup(d.array_of_descr)
 
     return index
 
 
-def falconn_query_image(
-    index, query_im, k, specific_params={"num_probes": -1, "max_num_candidates": -1}
-):
-    num_probes = specific_params["num_probes"]
-    max_num_candidates = specific_params["max_num_candidates"]
+def falconn_query_image(index, query_im, k, specific_params):
+    if specific_params is not None:
+        num_probes = specific_params["num_probes"]
+        max_num_candidates = specific_params["max_num_candidates"]
+    else:
+        num_probes = -1
+        max_num_candidates = -1
 
     distances, neighbors = [[]] * query_im.nb_descr, [[]] * query_im.nb_descr
 
@@ -52,11 +53,15 @@ def falconn_query_image(
     return distances, neighbors
 
 
-""" if __name__ == "__main__":
+if __name__ == "__main__":
     dpath = "./image_data/very_small"
     d = Database(dpath)
-    index = init_index(d)
+    index = falconn_init_index(d)
     query_im = d.images[0]
-    r = falconn_query_image(index, query_im, 10)
- """
+    des = query_im.descr[0]
+    print(d.reverse_descr_index(des).id)
+    print(query_im.id)
+
+    r = falconn_query_image(index, query_im, 10, None)
+    print(r[0][0], r[1][0])
 # a = query_object.get_candidates_with_duplicates(query_im.descr[0])
