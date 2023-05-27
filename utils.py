@@ -1,7 +1,7 @@
 #!/bin/python3
 
 import sys
-from typing import Generator, Any
+from typing import Generator, Any, List, Tuple
 import os
 from tqdm import tqdm
 import struct
@@ -135,7 +135,7 @@ class Database:
             self.dir_path + "/../" + f"_descr_{self.nb_descr_per_img}_" + self.name
         )
         self.taille_nuage = None
-
+        self.array_of_descr = np.empty(0)
         if auto_init:
             self.auto_init(verbose=verbose)
 
@@ -198,26 +198,23 @@ class Database:
             self.taille_nuage = sum(x.nb_descr for x in self.images)
         return self.taille_nuage
 
-    def to_array(self):
-        tot_nb_descr = sum(x.nb_descr for x in self.images)
-
-        arr = np.empty((tot_nb_descr, DESCRIPTORS_SIZE + 1), dtype=np.float32)
+    def compute_array_of_descr(self):
+        assert self.taille_nuage != None
+        self.array_of_descr = np.empty(
+            (self.taille_nuage, DESCRIPTORS_SIZE + 1), dtype=np.float32
+        )
         for i, (d, _) in enumerate(self.iter_descr_and_im()):
-            arr[i] = d
+            self.array_of_descr[i] = d
 
-        return arr
+    # détermine l'image associée au descripteur indexé descr_id
 
-    # détermine l'image associée au descripteur indexé ind (dans le tableau généré par to_array)
-    # def image_of_descr_index(self, ind):  # à enlever
-    #    s = self.images[0].nb_descr
-    #    i = 0
-    #    while s <= ind:
-    #        s += self.images[i].nb_descr
-    #        i += 1
-    #    return self.images[i]
+    def image_of_descr_id(self, descr_id):
+        return self.reverse_descr_index(self.array_of_descr[descr_id])
 
-    def reverse_descr_index(self, descr):
+    def reverse_descr_index(self, descr) -> Image:
         # utilise la dernière dimension comme index inverse
+        print(descr)
+        print(type(descr))
         im_id = int(descr[DESCRIPTORS_SIZE] * REVERSE_INDEX_DECAL_POS)
         return self.images[im_id]
 
@@ -257,4 +254,4 @@ if __name__ == "__main__":
         im.compute_descr()
     else:
         d = Database(entree, auto_init=True, verbose=True, nb_descr_per_img=nfeatures)
-        a = d.to_array()
+        a = d.array_of_descr
