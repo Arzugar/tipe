@@ -62,7 +62,7 @@ def query(
 
         for dist, descr_id in zip(dists, k_closests_descr):  # type: ignore
             associated_im = d.image_of_descr_id(descr_id)
-            if ignore_self and associated_im.id == query_im.group_id:
+            if ignore_self and associated_im.id == query_im.id:
                 continue
 
             # incrémente si existe déjà, sinon met à 1 * weight
@@ -71,14 +71,16 @@ def query(
                     associated_im.group_id, 0
                 ) + weight(dist)
             else:
-                histogram[im] = histogram.get(associated_im, 0) + weight(dist)
+                histogram[associated_im] = histogram.get(associated_im, 0) + weight(
+                    dist
+                )
     if verbose:
         print("Vote terminé")
     return sorted(histogram.items(), key=lambda x: x[1], reverse=True)[:im_k]
 
 
 if __name__ == "__main__":
-    rd.seed(1)
+    # rd.seed(1)
     args = sys.argv
 
     assert len(args) == 2
@@ -88,12 +90,20 @@ if __name__ == "__main__":
 
     print("Nombre de points du nuage : ", d.taille_nuage)
 
-    query_im = rd.choice(d.images)
-    print("Classe de l'image recherchée : ", query_im.group_id)
+    query_im = d.images[0]  # rd.choice(d.images)
+    print("Image recherchée : ", query_im.name)
 
     index = falconn_init_index(d)
 
     r = query(
-        d, query_im, falconn_query_image, index, snd_closest_ratio=True, verbose=True
+        d,
+        query_im,
+        falconn_query_image,
+        index,
+        snd_closest_ratio=False,
+        verbose=True,
+        weight=lambda x: 10000 / (x + 0.0001),
+        ignore_self=True,
     )
-    print(r)
+    for x, d in r:
+        print(x.name, d)
