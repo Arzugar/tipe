@@ -117,6 +117,9 @@ class Image:
                             struct.pack("<f", f)
                         )  # c'est des flottants 32 bits donc f est ok
 
+    def normalise(self):
+        self.descr /= la.norm(self.descr, axis=1).reshape(-1, 1)
+
 
 class Database:
     def __init__(
@@ -125,6 +128,7 @@ class Database:
         auto_init=True,
         verbose=False,
         nb_descr_per_img=DEFAULT_N_FEATURES,
+        normalise=False,
     ) -> None:
         self.dir_path = os.path.abspath(dir_path)
         self.images = np.empty(0)
@@ -189,6 +193,8 @@ class Database:
             self.compute_descr(save=True, verbose=verbose)
         self.compute_taille_nuage()
         self.compute_array_of_descr()
+        for im in self.images:
+            im.normalise
 
     def iter_descr_and_im(self) -> Generator[tuple[list[np.float32], Image], Any, None]:
         for im in self.images:
