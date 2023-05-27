@@ -6,6 +6,7 @@ import numpy.linalg as la
 import numpy.random as rd
 from typing import List, Tuple
 from query_with_falconn import *
+from query_with_open_cv import *
 
 
 def second_closest_ratio_test(
@@ -50,7 +51,11 @@ def query(
     histogram = dict()
     if verbose:
         print("Searching for voisins")
-    distances, k_closests = search_func(index, query_im, descr_k, specific_params)
+    distances, k_closests = search_func(
+        index, query_im, descr_k, specific_params=specific_params
+    )
+    # print(*distances[:5], sep="\n")
+    # print(*k_closests[:5], sep="\n")
     if verbose:
         print("Voisins trouvés\nVote en cours")
     for dists, k_closests_descr in zip(distances, k_closests):  # type: ignore
@@ -76,11 +81,16 @@ def query(
                 )
     if verbose:
         print("Vote terminé")
+        # print("Histograme de vote :")
+        # print(*sorted(histogram.items(), key=lambda x: x[1]), sep="\n")
     return sorted(histogram.items(), key=lambda x: x[1], reverse=True)[:im_k]
 
 
+# Y'a des trucs qui marchent pas avec numpy, je sais pas pourquoi
+# parties de test
+""" 
 if __name__ == "__main__":
-    # rd.seed(1)
+    rd.seed(1)
     args = sys.argv
 
     assert len(args) == 2
@@ -90,20 +100,34 @@ if __name__ == "__main__":
 
     print("Nombre de points du nuage : ", d.taille_nuage)
 
-    query_im = d.images[0]  # rd.choice(d.images)
-    print("Image recherchée : ", query_im.name)
+    index = ocv_init_index(d)
+    # print(index.TrainData)
 
-    index = falconn_init_index(d)
+    search_descr = d.images[0].descr[12]
+    r = index.knnMatch(np.array([search_descr], dtype=np.float32), k=10)
+    for m in r[0]:
+        print(m.distance, m.imgIdx)
+ """
+""" 
+    for query_im in d.images:
+        # print("Image recherchée : ", query_im.name)
 
-    r = query(
-        d,
-        query_im,
-        falconn_query_image,
-        index,
-        snd_closest_ratio=False,
-        verbose=True,
-        weight=lambda x: 10000 / (x + 0.0001),
-        ignore_self=True,
-    )
-    for x, d in r:
-        print(x.name, d)
+        # index = falconn_init_index(d)
+
+        r = query(
+            d,
+            query_im,
+            ocv_query_search,
+            index,
+            snd_closest_ratio=False,
+            verbose=True,
+            weight=lambda x: 1 / (x * x + 0.0001),
+            ignore_self=True,
+            descr_k=5,
+            im_k=10,
+        )
+
+        print("Voisins pour l'image :", query_im.id)
+        for x, d in r:
+            print(x.name, d)
+ """
