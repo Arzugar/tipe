@@ -1,13 +1,13 @@
 import falconn as fa
 from utils import *
 
-number_of_tables = 30
+falconn_number_of_tables = 30
 
 falconn_default_index_params = fa.LSHConstructionParameters()
 falconn_default_index_params.dimension = DESCRIPTORS_SIZE + 1
 falconn_default_index_params.lsh_family = fa.LSHFamily.Hyperplane
 falconn_default_index_params.distance_function = fa.DistanceFunction.EuclideanSquared
-falconn_default_index_params.l = number_of_tables
+falconn_default_index_params.l = falconn_number_of_tables
 # for sparse data set it to 2 , for dense data : 1
 falconn_default_index_params.num_rotations = 2
 falconn_default_index_params.seed = 5721840
