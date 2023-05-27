@@ -8,20 +8,34 @@ FLANN_INDEX_KMEANS = 2
 FLANN_INDEX_COMPOSITE = 3
 FLANN_INDEX_LSH = 6
 
+ocv_default_params = None
 
-def init_matcher(d: Database, index_param={}, search_param={}):
-    m = cv.FlannBasedMatcher(index_param, search_param)
 
+def ocv_init_index(
+    d: Database,
+    index_param={
+        "algorithm": FLANN_INDEX_LINEAR,
+    },
+    search_param={},
+):
+    m = cv.FlannBasedMatcher(indexParams=index_param, searchParams=search_param)
+    # t = np.array([im.descr for im in d.images])
+    # m.add(t)
     for im in d.images:
-        m.add(im.descr)
+        m.add([im.descr])
+
+    m.train()
 
     return m
 
 
-def query_search(d: Database, m: cv.FlannBasedMatcher = None):
-    pass
+def ocv_query_search(index: cv.FlannBasedMatcher, query_im, k, specific_params=None):
+    r = index.knnMatch(query_im.descr, k=k)
+    # print(*r[:2], sep="\n")
+    return [[x.distance for x in m] for m in r], [[x.trainIdx for x in m] for m in r]
 
 
+""" 
 if __name__ == "__main__":
     args = sys.argv
 
@@ -44,19 +58,4 @@ if __name__ == "__main__":
     )
     m = init_matcher(d, index_param=index_params)
     m.train()
-
-    print("ok !")
-
-
-"""     result = query(
-        d,
-        query_im,
-        search_f,
-        im_k=1,
-        descr_k=50,  # bug : si le nombre de tables est >= descr_k , aucun voisins ne sont trouvés
-        verbose=True,
-        weight=lambda x: 1 / (x + 0.001),
-        snd_closest_ratio=False,
-        ignore_self=True,
-    ) """
-# print(result[0][0].group_id)
+ """
