@@ -24,7 +24,7 @@ def second_closest_ratio_test(
 
 # Modifier pour appeler une fonction qui renvoie tous les descripteurs proches de ceux de l'image
 # Fonction générique pour
-def query(
+def query_generic(
     data: Database,
     query_im: Image,
     search_func,
@@ -87,6 +87,7 @@ def query(
 
 
 # Y'a des trucs qui marchent pas avec numpy, je sais pas pourquoi
+
 # parties de test
 """ 
 if __name__ == "__main__":
