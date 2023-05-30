@@ -144,7 +144,7 @@ class Database:
         self.images = np.empty(0)
         # nombre avec lequel ça a été calculé, ça peut être moins si y'a pas assez de features
         self.nb_descr_per_img = nb_descr_per_img
-        self.name = dir_path.split("/")[-1]
+        self.name = dir_path.split("/")[-1 if dir_path[-1] != "/" else -2]
         self.reverse_index = reverse_index
 
         _rajout = "rev_" if self.reverse_index else ""
