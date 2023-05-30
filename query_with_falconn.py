@@ -6,7 +6,7 @@ from utils import *
 falconn_number_of_tables = 50
 
 falconn_default_index_params = fa.LSHConstructionParameters()
-falconn_default_index_params.dimension = DESCRIPTORS_SIZE + 1
+falconn_default_index_params.dimension = DESCRIPTORS_SIZE
 falconn_default_index_params.lsh_family = fa.LSHFamily.Hyperplane
 falconn_default_index_params.distance_function = fa.DistanceFunction.EuclideanSquared
 falconn_default_index_params.l = falconn_number_of_tables
@@ -46,6 +46,20 @@ def falconn_query_image(index, query_im, k, specific_params):
         distances[i] = dists
         neighbors[i] = k_n
     return distances, neighbors
+
+
+def falconn_query_descr(index, descr, k, specific_params):
+    if specific_params is not None:
+        num_probes = specific_params["num_probes"]
+    else:
+        num_probes = -1
+    max_num_candidates = -1
+    query_object = index.construct_query_object(
+        num_probes=num_probes, max_num_candidates=max_num_candidates
+    )
+    k_n = query_object.find_k_nearest_neighbors(descr, k)
+    dists = [la.norm(x - descr, ord=2, axis=0) for x in k_n]
+    return dists, k_n
 
 
 if __name__ == "__main__":
