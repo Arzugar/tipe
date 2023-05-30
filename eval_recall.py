@@ -49,6 +49,7 @@ with open("resultats_num.csv", "a", newline="") as f:
 
 
 for nb_descr in nb_descr_val:
+    print("Building database for : ", nb_descr)
     d = Database(
         datapath,
         auto_init=True,
@@ -129,3 +130,4 @@ for nb_descr in nb_descr_val:
                     avg_score,
                 ]
             )
+print("Evaluation terminée")
