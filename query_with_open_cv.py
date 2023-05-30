@@ -22,11 +22,9 @@ def ocv_init_index(
     search_param={},
 ):
     m = cv.FlannBasedMatcher(indexParams=index_param, searchParams=search_param)
-    # t = np.array([im.descr for im in d.images])
-    # m.add(t)
-    for im in d.images:
-        m.add([im.descr])
-        m.train()
+
+    m.add([d.array_of_descr])
+    m.train()
 
     return m
 
