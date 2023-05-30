@@ -95,8 +95,10 @@ class Image:
         sift = cv.SIFT_create(nfeatures=nfeatures)
 
         _, des = sift.detectAndCompute(grayscale, None)
-
-        nbr_effectif_features = min(len(des), nfeatures)
+        if des is None:
+            nbr_effectif_features = 0
+        else:
+            nbr_effectif_features = min(len(des), nfeatures)
 
         if reverse_index:
             self.descr = np.append(
