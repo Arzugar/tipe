@@ -262,6 +262,16 @@ class Database:
         # ici l'arrondi est peut-être pas une idée de fou
         return self.images[im_id]
 
+    def _normalise(self):
+        for im in self.images:
+            im.normalise
+        self.normalise = True
+
+    def _center(self):
+        mean = np.mean(self.array_of_descr)
+        self.mean = mean
+        self.array_of_descr -= mean
+
 
 def basic_search_base(point_set, query_point, k: int):
     h = []
