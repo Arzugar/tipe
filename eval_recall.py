@@ -61,7 +61,7 @@ for nb_descr in nb_descr_val:
     sample_size = d.taille_nuage // 1000  # type: ignore
 
     queries = rd.choices(d.array_of_descr, k=sample_size)
-    print("Building kd tree index")
+    # print("Building kd tree index")
     t1 = timeit.default_timer()
 
     kd_tree_index = scipy_init_index(d)
@@ -87,13 +87,13 @@ for nb_descr in nb_descr_val:
         params.l = nb_tables
 
         fa.compute_number_of_hash_functions(round(np.log2(d.taille_nuage)), params)  # type: ignore
-        print("Building lsh index")
+        # print("Building lsh index")
         t1 = timeit.default_timer()
         lsh_index = falconn_init_index(d, params=params)
         t2 = timeit.default_timer()
         lsh_build_time = t2 - t1
-        print("Lsh index built")
-        print("Queries on LSH ...")
+        # print("Lsh index built")
+        # print("Queries on LSH ...")
         t1 = timeit.default_timer()
         results = [
             falconn_query_descr(
@@ -106,7 +106,7 @@ for nb_descr in nb_descr_val:
         ]
         t2 = timeit.default_timer()
         avg_lsh_query_time = (t2 - t1) / sample_size
-        print("Queries on LSH done !")
+        # print("Queries on LSH done !")
         scores = []
         for r, a in zip(results, answers):  # type: ignore
             scores.append(len_inter(r, a) / k)
