@@ -19,9 +19,9 @@ def len_inter(a, b):
 
 
 k_val = [5, 10, 15, 20, 30, 50, 60, 70, 80, 90, 100]
-nb_descr_val = [10, 20, 50, 100, 256, 512, 1024, 2048]
-nb_tables_val = range(5, 100, 5)
-nb_probes_coef_val = range(1, 40)
+nb_descr_val = [10, 50, 100, 256, 512, 1024, 2048]
+nb_tables_val = [1, 2, 3, 4, 5] + list(range(10, 100, 10))
+nb_probes_coef_val = range(1, 40, 2)
 
 rd.seed(20232022)
 
