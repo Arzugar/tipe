@@ -43,7 +43,7 @@ def falconn_query_image(index, query_im, k, specific_params):
     )
     for i, d in enumerate(query_im.descr):
         k_n = query_object.find_k_nearest_neighbors(d, k)
-        dists = [la.norm(x - d, ord=2, axis=0) ** 2 for x in k_n]
+        dists = [la.norm(x - d, ord=2, axis=0) for x in k_n]
         distances[i] = dists
         neighbors[i] = k_n
     return distances, neighbors
