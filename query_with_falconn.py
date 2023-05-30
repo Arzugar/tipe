@@ -3,7 +3,7 @@
 import falconn as fa
 from utils import *
 
-falconn_number_of_tables = 30
+falconn_number_of_tables = 50
 
 falconn_default_index_params = fa.LSHConstructionParameters()
 falconn_default_index_params.dimension = DESCRIPTORS_SIZE + 1
@@ -33,10 +33,9 @@ def falconn_init_index(d: Database, params=falconn_default_index_params):
 def falconn_query_image(index, query_im, k, specific_params):
     if specific_params is not None:
         num_probes = specific_params["num_probes"]
-        max_num_candidates = specific_params["max_num_candidates"]
     else:
         num_probes = -1
-        max_num_candidates = -1
+    max_num_candidates = -1
     distances, neighbors = [[]] * query_im.nb_descr, [[]] * query_im.nb_descr
     query_object = index.construct_query_object(
         num_probes=num_probes, max_num_candidates=max_num_candidates
@@ -57,7 +56,9 @@ if __name__ == "__main__":
     print(query_im.name)
     des = query_im.descr
 
-    r = falconn_query_image(index, query_im, 10, None)
-    print(r[0][0])
-    print(r[0][1])
+    r = falconn_query_image(
+        index, query_im, 10, {"num_probes": 20 * falconn_number_of_tables}
+    )
+    print(np.round(r[0][0], 2))
+    print(r[1][0])
 # a = query_object.get_candidates_with_duplicates(query_im.descr[0])
