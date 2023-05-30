@@ -18,12 +18,12 @@ def len_inter(a, b):
     return i
 
 
-k_val = [5, 10, 15, 20, 30, 50]
-nb_descr_val = [256]
-nb_tables_val = [10, 20, 30, 40, 50]
-nb_probes_coef_val = range(11)
+k_val = [5, 10, 15, 20, 30, 50, 60, 70, 80, 90, 100]
+nb_descr_val = [10, 20, 50, 100, 256, 512, 1024, 2048]
+nb_tables_val = range(5, 100, 5)
+nb_probes_coef_val = range(1, 40)
 
-rd.seed(20222023)
+rd.seed(20232022)
 
 args = sys.argv
 assert len(args) == 2
@@ -58,8 +58,9 @@ for nb_descr in nb_descr_val:
         center=True,  # je sais pas si il le fait bien sur les images ou juste sur array_of_descr
         reverse_index=False,
     )
+    print("Taille du nuage : ", d.taille_nuage)
     sample_size = d.taille_nuage // 1000  # type: ignore
-
+    print("sampleling on : ", sample_size)
     queries = rd.choices(d.array_of_descr, k=sample_size)
     # print("Building kd tree index")
     t1 = timeit.default_timer()
