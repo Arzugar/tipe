@@ -100,7 +100,9 @@ class Image:
         else:
             nbr_effectif_features = min(len(des), nfeatures)
 
-        if reverse_index:
+        if des is None:
+            pass
+        elif reverse_index:
             self.descr = np.append(
                 des[:nbr_effectif_features],
                 [[self.id * REVERSE_INDEX_DECAL_NEG]] * nbr_effectif_features,
