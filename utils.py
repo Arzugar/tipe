@@ -55,7 +55,7 @@ class Image:
             return NotImplemented
         return self.group_id == other.group_id
 
-    def load_descr(self, buffer_size=256):
+    def load_descr(self, buffer_size=256, reverse_index=False):
         if self.descr_path == None:
             print("Cannot load, no descr_path provided")
             raise LoadError
@@ -65,21 +65,26 @@ class Image:
                 self.nb_descr = struct.unpack("<l", lg)[0]
                 # nombre de descripteurs de l'image
 
+                descr_size = DESCRIPTORS_SIZE + (1 if reverse_index else 0)
+
                 self.descr = np.empty(
-                    (self.nb_descr, DESCRIPTORS_SIZE + 1), dtype=np.float32
+                    (self.nb_descr, descr_size), dtype=np.float32
                 )  # la n+1 ième dimension sert d'index inverse
 
                 for i in range(0, self.nb_descr):
-                    descr_bytes_size = 4 * (DESCRIPTORS_SIZE + 1)
+                    descr_bytes_size = 4 * (descr_size)
                     chunk = file.read(descr_bytes_size)
                     descriptor = np.array(
-                        struct.unpack("<" + ("f" * (DESCRIPTORS_SIZE + 1)), chunk),
+                        struct.unpack("<" + ("f" * (descr_size)), chunk),
                         dtype=np.float32,
                     )
-                    descriptor[-1] = self.id * REVERSE_INDEX_DECAL_NEG
+                    if reverse_index:
+                        descriptor[-1] = self.id * REVERSE_INDEX_DECAL_NEG
                     self.descr[i] = descriptor
 
-    def compute_descr(self, save=False, outfile="", nfeatures=DEFAULT_N_FEATURES):
+    def compute_descr(
+        self, save=False, outfile="", nfeatures=DEFAULT_N_FEATURES, reverse_index=False
+    ):
         outfile = os.path.abspath(outfile)
 
         img = cv.imread(self.path)
@@ -93,16 +98,19 @@ class Image:
 
         nbr_effectif_features = min(len(des), nfeatures)
 
-        self.descr = np.append(
-            des[:nbr_effectif_features],
-            [[self.id * REVERSE_INDEX_DECAL_NEG]] * nbr_effectif_features,
-            axis=1,
-        )  # la dernière dimension sert d'index inversé
+        if reverse_index:
+            self.descr = np.append(
+                des[:nbr_effectif_features],
+                [[self.id * REVERSE_INDEX_DECAL_NEG]] * nbr_effectif_features,
+                axis=1,
+            )  # la dernière dimension sert d'index inversé
+        else:
+            self.descr = des[:nbr_effectif_features]
 
         self.nb_descr = nbr_effectif_features
 
         self.descr.reshape(
-            (self.nb_descr, DESCRIPTORS_SIZE + 1),
+            (self.nb_descr, DESCRIPTORS_SIZE + (1 if reverse_index else 0)),
         )
 
         self.descr = np.ndarray.astype(self.descr, dtype=np.float32, copy=False)
@@ -129,17 +137,26 @@ class Database:
         verbose=False,
         nb_descr_per_img=DEFAULT_N_FEATURES,
         normalise=False,
+        reverse_index=False,
+        center=False,
     ) -> None:
         self.dir_path = os.path.abspath(dir_path)
         self.images = np.empty(0)
         # nombre avec lequel ça a été calculé, ça peut être moins si y'a pas assez de features
         self.nb_descr_per_img = nb_descr_per_img
         self.name = dir_path.split("/")[-1]
-        self.descr_path = (
-            self.dir_path + "/../" + f"_descr_{self.nb_descr_per_img}_" + self.name
+        self.reverse_index = reverse_index
+
+        _rajout = "rev_" if self.reverse_index else ""
+        self.descr_path = os.path.abspath(
+            f"{self.dir_path}/../_descr_{self.nb_descr_per_img}_{_rajout}{self.name}"
         )
+
         self.taille_nuage = None
         self.array_of_descr = np.empty(0)
+        self.normalise = normalise
+        self.center = center
+
         if auto_init:
             self.auto_init(verbose=verbose)
 
@@ -167,7 +184,7 @@ class Database:
         else:
             it = range(len(self.images))
         for i in it:
-            self.images[i].load_descr()
+            self.images[i].load_descr(reverse_index=self.reverse_index)
 
     def compute_descr(self, save: bool = False, verbose=False):
         # assert self.images != np.empty(0)
@@ -181,7 +198,10 @@ class Database:
             outfile = self.descr_path + "/" + im.name
 
             im.compute_descr(
-                outfile=outfile, save=save, nfeatures=self.nb_descr_per_img
+                outfile=outfile,
+                save=save,
+                nfeatures=self.nb_descr_per_img,
+                reverse_index=self.reverse_index,
             )
 
     def auto_init(self, verbose=False):
@@ -192,9 +212,20 @@ class Database:
         else:
             self.compute_descr(save=True, verbose=verbose)
         self.compute_taille_nuage()
+
         self.compute_array_of_descr()
-        for im in self.images:
-            im.normalise
+
+        if self.center:
+            mean = np.mean(self.array_of_descr)
+            self.mean = mean
+            self.array_of_descr -= mean
+
+        if self.normalise:
+            for im in self.images:
+                im.normalise
+
+    def center_query(self, query):
+        query -= self.mean
 
     def iter_descr_and_im(self) -> Generator[tuple[list[np.float32], Image], Any, None]:
         for im in self.images:
@@ -209,7 +240,8 @@ class Database:
     def compute_array_of_descr(self):
         assert self.taille_nuage != None
         self.array_of_descr = np.empty(
-            (self.taille_nuage, DESCRIPTORS_SIZE + 1), dtype=np.float32
+            (self.taille_nuage, DESCRIPTORS_SIZE + (1 if self.reverse_index else 0)),
+            dtype=np.float32,
         )
         i = 0
         for im in self.images:
@@ -220,9 +252,11 @@ class Database:
     # détermine l'image associée au descripteur indexé descr_id
 
     def image_of_descr_id(self, descr_id):
-        return self.reverse_descr_index(self.array_of_descr[descr_id])
+        assert self.reverse_index
+        return self._reverse_descr_index(self.array_of_descr[descr_id])
 
-    def reverse_descr_index(self, descr) -> Image:
+    def _reverse_descr_index(self, descr) -> Image:
+        assert self.reverse_index
         # utilise la dernière dimension comme index inverse
         im_id = round(descr[DESCRIPTORS_SIZE] * REVERSE_INDEX_DECAL_POS)
         # ici l'arrondi est peut-être pas une idée de fou
@@ -263,5 +297,13 @@ if __name__ == "__main__":
         im = Image(entree)
         im.compute_descr()
     else:
-        d = Database(entree, auto_init=True, verbose=True, nb_descr_per_img=nfeatures)
+        d = Database(
+            entree,
+            auto_init=True,
+            verbose=True,
+            nb_descr_per_img=nfeatures,
+            reverse_index=False,
+            normalise=True,
+            center=True,
+        )
         a = d.array_of_descr
