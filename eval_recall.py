@@ -1,3 +1,5 @@
+#!/bin/python3
+
 from utils import *
 import itertools
 import timeit
