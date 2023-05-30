@@ -23,7 +23,7 @@ if __name__ == "__main__":
     # print("Sample size : ", sample_size)
     descr_k_vals = range(20, 100, 10)
     nb_tables_val = range(50, 300, 10)
-    num_probes_coef_val = range(20, 500, 20)
+    num_probes_coef_val = range(20, 500, 10)
     nb_descriptors_val = [256, 512, 1024, 2048]
     # range(2, 21, 2)
     # nb_fun_per_table_val = [10, 20]  # [1, 2, 3, 4]
