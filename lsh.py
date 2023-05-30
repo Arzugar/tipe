@@ -10,7 +10,7 @@ import numpy.random as rd
 rng = rd.default_rng()
 
 
-def datar_hash_fun(r, d=128):
+def datar_hash_fun(r, d=DESCRIPTORS_SIZE + 1):
     a = rng.standard_normal(d)
     b = rng.uniform(low=0.0, high=r)
     return lambda x: np.floor((np.dot(x, a) + b) / r)
@@ -19,7 +19,7 @@ def datar_hash_fun(r, d=128):
 def datar_hash_familly(
     k: int,
     r=10,  # semble être une bonne approx
-    d=128,
+    d=DESCRIPTORS_SIZE + 1,
 ):
     return [datar_hash_fun(r, d) for _ in range(k)]
 
@@ -83,9 +83,9 @@ class Lsh:
     def preprocess(self, database: Database, verbose=False):
         self.database = database
         if verbose:
-            it = tqdm(database.iter_descr(), total=database.taille_nuage())
+            it = tqdm(database.iter_descr_and_im(), total=database.taille_nuage())
         else:
-            it = database.iter_descr()
+            it = database.iter_descr_and_im()
         for descr, im in it:
             for h_table in self.tables:
                 h_table.add(key=descr, value=im)
