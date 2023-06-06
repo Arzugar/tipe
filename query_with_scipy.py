@@ -6,7 +6,7 @@ import numpy as np
 
 
 def scipy_init_index(d: Database, params=None):
-    tree = cKDTree(d.array_of_descr)
+    tree = cKDTree(d.array_of_descr)  # type: ignore
     return tree
 
 
