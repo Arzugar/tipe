@@ -390,4 +390,4 @@ if __name__ == "__main__":
     # affiche_curse_of_dim()
     # kd_build_time("./image")
     eval_linear("./image_data/jpg2")
-    affiche_lineaire()
+    # affiche_lineaire()
