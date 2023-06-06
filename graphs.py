@@ -64,6 +64,7 @@ if __name__ == "__main__":
     k = int(sys.argv[2])
     q = int(sys.argv[3])
     linear_times, scipy_times, nb_descr_effective_val = linear_vs_scipy(datapath, k, q)
-    print(linear_times)
-    print(scipy_times)
-    print(nb_descr_effective_val)
+    with open("linear_vs_scipy.csv", "w") as f:
+        f.write("nb_descr_effective,linear_time,scipy_time\n")
+        for i in range(len(nb_descr_effective_val)):
+            f.write(f"{nb_descr_effective_val[i]},{linear_times[i]},{scipy_times[i]}\n")
