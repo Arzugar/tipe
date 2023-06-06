@@ -58,7 +58,7 @@ def linear_search_time_basic_point_set(point_set, nb_points, q: int, k: int) -> 
 # moyenne le temps de recherche sur q, un entier requêtes aléatoires
 def kd_trees_search_time(point_set, nb_points, q: int, k: int) -> float:
     queries = rd.choices(point_set, k=q)
-    kd_tree_index = scipy_init_index(point_set[:nb_points])
+    kd_tree_index = cKDTree(point_set[:nb_points])
     t1 = timeit.default_timer()
     for query in queries:
         scipy_query_descr(kd_tree_index, query, k)
