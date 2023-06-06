@@ -38,6 +38,22 @@ def linear_search_time_basic(d: Database, q: int, k: int) -> float:
     return (t2 - t1) / q
 
 
+def linear_search_time_basic_point_set(point_set, nb_points, q: int, k: int) -> float:
+    queries = rd.choices(point_set, k=q)
+    h = []
+    t1 = timeit.default_timer()
+    for query in queries:
+        for point in point_set[:nb_points]:
+            # distance euclidiènne entre les deux vecteurs
+            dist = la.norm(query - point)
+            if len(h) < k:
+                hp.heappush(h, -dist)
+            else:
+                hp.heappushpop(h, -dist)
+    t2 = timeit.default_timer()
+    return (t2 - t1) / q
+
+
 # recherche linéaire en fonction du nombre de points, utilisant les kd trees de scipy
 # moyenne le temps de recherche sur q, un entier requêtes aléatoires
 def kd_trees_search_time(d: Database, q: int, k: int) -> float:
@@ -78,6 +94,46 @@ def linear_vs_kd(datapath, k: int, q: int = 30):
     return linear_times, kd_tree_time, nb_descr_effective_val
 
 
+# évalue les temps de recherche linéaire en fonction du nombre de points
+# sauvegarde les résultats dans un fichier csv
+def eval_linear(datapath, k=10, q=30):
+    nb_descr_val = [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000,
+        20000,
+    ]
+    nb_descr_effective_val = []
+    d = Database(
+        datapath,
+        auto_init=True,
+        verbose=False,
+        nb_descr_per_img=nb_descr_val[-1],
+        normalise=False,
+        center=False,
+        reverse_index=False,
+    )
+
+    with open("eval_linear.csv", "a") as f:
+        f.write("nb_descr_effective,linear_time\n")
+
+    for nb_descr in nb_descr_val:
+        t = linear_search_time_basic_point_set(d.array_of_descr, nb_descr, q, k)
+        nb_descr_effective_val.append(d.taille_nuage)
+        print("done for ", nb_descr)
+
+        with open("linear_vs_kd.csv", "a") as f:
+            f.write(f"{d.taille_nuage},{t}\n")
+
+
 def eval_linear_vs_kd(verbose: bool = False):
     assert len(sys.argv) == 4
     datapath = sys.argv[1]
@@ -107,7 +163,16 @@ def eval_linear_vs_kd(verbose: bool = False):
 
 # charge les données de resultats_num.csv, ne conserve que celle pour nb_descr = 2048
 # affiche les temps de recherche pour lsh en fonction de nb_tables
-def draw_graph(x_val: str, y_val: str, z_val: str):
+# permet de choisir si une échelle logarithmique est utilisée pour chaque axe
+# permet de moyenner les valeur de l'axe y pour chaque valeur de l'axe x
+def draw_graph(
+    x_val: str,
+    y_val: str,
+    z_val: str,
+    log_x: bool = False,
+    log_y: bool = False,
+    moyenne: bool = False,
+):
     assert x_val in [
         "k",
         "nb_tables",
@@ -169,11 +234,30 @@ def draw_graph(x_val: str, y_val: str, z_val: str):
             if z_val != "":
                 zs.append(d[z_val])
 
+    # moyenne les valeurs de y pour chaque valeur de x
+    if moyenne:
+        x_val_set = set(xs)
+        new_xs = list(x_val_set)
+        new_ys = []
+        # parcours les valeurs ys, et ajoute la moyenne des valeurs de ys pour chaque valeur de x
+        for x_val in x_val_set:
+            moy = 0
+            nb = 0
+            for i in range(len(xs)):
+                if xs[i] == x_val:
+                    moy += ys[i]
+                    nb += 1
+            new_ys.append(moy / nb)
+        xs = new_xs
+        ys = new_ys
+
     # génère un graphique 3D ou 2D selon si z_val est "" ou non
     if z_val == "":
+        # affiche une courbe 2D
         plt.scatter(xs, ys)
         plt.xlabel(x_val)
         plt.ylabel(y_val)
+
     else:
         # affiche une surface 3D
         """fig = plt.figure()
@@ -190,12 +274,51 @@ def draw_graph(x_val: str, y_val: str, z_val: str):
         ax.set_xlabel(x_val)
         ax.set_ylabel(y_val)
         ax.set_zlabel(z_val)
+    if log_x:
+        plt.xscale("log")
+    if log_y:
+        plt.yscale("log")
+
+    plt.show()
+
+
+# affiche le temps de construction des arbres k dimensionels en fonction du nombre de vecteurs de la base de données
+def kd_build_time(datapath):
+    nb_descr_val = [256, 512, 1024, 2048, 4096, 5000, 6000, 7000, 8000, 9000, 10000]
+    nb_descr_effective_val = []
+    kd_build_time = []
+    for nb_descr in nb_descr_val:
+        d = Database(
+            datapath,
+            auto_init=True,
+            verbose=False,
+            nb_descr_per_img=nb_descr,
+            normalise=False,
+            center=False,
+            reverse_index=False,
+        )
+        t1 = timeit.default_timer()
+        scipy_init_index(d)
+        t2 = timeit.default_timer()
+        kd_build_time.append((t2 - t1))
+
+        nb_descr_effective_val.append(d.taille_nuage)
+        print("done for ", nb_descr)
+        # print("linear times : ", linear_times, sep="\n")
+        # print("kd-tree times : ", kd_tree_time, sep="\n")
+        # print("nb_descr_effective_val : ", nb_descr_effective_val, sep="\n")
+
+    # génère le graphique
+    plt.scatter(nb_descr_effective_val, kd_build_time)
+    plt.xlabel("nb_descr_effective")
+    plt.ylabel("time")
+    plt.show()
 
 
 # evalue les temps moyens de recherche avec des kd trees pour des vecteurs aléatoires de dimension 2 à 2048
 # affiche les résultats dans un graphique
-def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 10**4):
-    vector_sizes = [2**i for i in range(1, 15)]
+def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 10**6):
+    vector_sizes = [128, 256, 512, 1024]
     times = []
     # génère un nuage de point aléatoire, uniformément choisits dans [0, 1]^vector_size
 
@@ -221,8 +344,50 @@ def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 10**4):
             f.write(f"{vector_sizes[i]},{times[i]}\n")
 
 
+def affiche_curse_of_dim():
+    vector_sizes = []
+    times = []
+    with open("curse_of_dim.csv", "r") as f:
+        # ignore les 2 premières lignes
+        f.readline()
+        f.readline()
+
+        for line in f:
+            vector_size, time = line.split(",")
+            vector_sizes.append(int(vector_size))
+            times.append(float(time))
+
+    plt.scatter(vector_sizes, times)
+    plt.xlabel("vector_size")
+    plt.ylabel("time")
+    plt.show()
+
+
+# affiche le temps de recherche linéaire en fonction du nombre de points
+def affiche_lineaire():
+    vals_n = []
+    times = []
+    with open("eval_linear.csv", "r") as f:
+        # ignore la premières lignes
+        f.readline()
+
+        for line in f:
+            n, time = line.split(",")
+            vals_n.append(int(n))
+            times.append(float(time))
+
+    plt.scatter(vals_n, times)
+    plt.xlabel("nombre de points")
+    plt.ylabel("temps (s)")
+    plt.title("temps de recherche linéaire en fonction du nombre de points")
+    plt.show()
+
+
 if __name__ == "__main__":
-    # curse_of_dim(nb_queries=20)
-    eval_linear_vs_kd(verbose=False)
-    # draw_graph("nb_tables", "nb_probes_ceof", "score")
-    # plt.show()
+    # curse_of_dim(nb_queries=10)
+    # eval_linear_vs_kd(verbose=False)
+    # draw_graph("nb_descr", "kd_build_time", "", log_x=False, moyenne=True)
+    # affiche_curse_of_dim()
+    # kd_build_time("./image")
+    eval_linear("./image_data/jpg1")
+    affiche_lineaire()
