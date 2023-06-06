@@ -309,10 +309,11 @@ def kd_build_time(datapath):
 # evalue les temps moyens de recherche avec des kd trees pour des vecteurs aléatoires de dimension 2 à 2048
 # affiche les résultats dans un graphique
 def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 10**6):
-    vector_sizes = [128, 256, 512, 1024]
+    vector_sizes = [600, 700, 800, 900]
     times = []
     # génère un nuage de point aléatoire, uniformément choisits dans [0, 1]^vector_size
-
+    with open("curse_of_dim.csv", "a") as f:
+        f.write("vector_size,time\n")
     for vector_size in vector_sizes:
         # génère un nuage de vecteurs aléatoires de dimension vector_size
         # et effectue des recherches avec des kd trees
@@ -326,13 +327,11 @@ def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 10**6):
         for query in queries:
             scipy_query_descr(index, query, 10)
         t2 = timeit.default_timer()
-        times.append((t2 - t1) / nb_queries)
+        delta_t = (t2 - t1) / nb_queries
 
-    # sauvegarde les résultats dans un fichier csv
-    with open("curse_of_dim.csv", "a") as f:
-        f.write("vector_size,time\n")
-        for i in range(len(vector_sizes)):
-            f.write(f"{vector_sizes[i]},{times[i]}\n")
+        # sauvegarde les résultats dans un fichier csv
+        with open("curse_of_dim.csv", "a") as f:
+            f.write(f"{vector_size},{delta_t}\n")
 
 
 def affiche_curse_of_dim():
@@ -349,8 +348,10 @@ def affiche_curse_of_dim():
             times.append(float(time))
 
     plt.scatter(vector_sizes, times)
-    plt.xlabel("vector_size")
-    plt.ylabel("time")
+    plt.xlabel("taille des vecteurs")
+    plt.ylabel("temps (s)")
+    plt.title("Malédiction de la dimension")
+    plt.xscale("log")
     plt.show()
 
 
@@ -374,11 +375,85 @@ def affiche_lineaire():
     plt.show()
 
 
+def second_closest_ratio_test(
+    d: Database, dists: List[np.float32], closests, max_ratio
+):
+    if len(closests) == 0:
+        return True  # à voir si c'est le plus intelligent
+    d1, first_im = dists[0], d.simple_reverse_index(closests[0])
+    for d2, snd_descr_id in zip(dists[1:], closests[1:]):  # type: ignore
+        snd_im = d.simple_reverse_index(snd_descr_id)
+        if first_im.group_id != snd_im.group_id:
+            return d1 <= max_ratio * d2
+    return False
+
+
+# à partir d'une base de donnée, met en place une structure LSH
+# une image est choisie aléatoirement dans la base de données
+# pour chacun des descripteurs de cette image on en trouve les k plus proches voisins
+# puis chaque descripteur ainsi trouvé vote pour la classe de l'image à laquelle il appartient
+# l'image qui a le plus de votes est choisie comme résultat
+def lsh_vote(datapath, k: int, nb_tables: int, nb_probes_coef: int, q: int = 30):
+    # on charge la base de données
+    d = Database(
+        datapath,
+        auto_init=True,
+        verbose=False,
+        nb_descr_per_img=512,
+        normalise=True,
+        center=True,
+        reverse_index=False,
+    )
+    queries = rd.choices(d.images, k=q)
+    # on construit la structure LSH
+    params = falconn_default_index_params
+    params.seed = rd.randint(0, 2**32)
+    params.l = nb_tables
+    fa.compute_number_of_hash_functions(round(np.log2(d.taille_nuage)), params)  # type: ignore
+    lsh_index = falconn_init_index(d, params=params)
+    # on effectue les requêtes
+    score = 0
+    for query in queries:
+        distances, neighbors = falconn_query_image(
+            lsh_index, query, k, {"num_probes": nb_probes_coef * nb_tables}
+        )
+        # on compte les votes
+        votes = {}
+        for dists, k_closests_descr in zip(distances, neighbors):  # type: ignore
+            # skip this descriptor if not relevant enought
+            if not second_closest_ratio_test(d, dists, k_closests_descr, 0.75):
+                continue
+            for dist, descr_id in zip(dists, k_closests_descr):
+                associated_im = d.simple_reverse_index(descr_id)
+                if associated_im.id == query.id:
+                    continue
+                votes[associated_im] = votes.get(associated_im, 0) + 1 / (dist + 0.0001)
+        # determine si la requête a été correctement classifiée
+        if len(votes) == 0:
+            continue
+        sorted_votes = list(
+            map(
+                lambda x: x[0].group_id,
+                sorted(votes.items(), key=lambda x: x[1], reverse=True),
+            )
+        )
+        # print("votes : ", sorted_votes[:10])
+        if query.group_id == sorted_votes[0]:
+            score += 1
+
+    # enregistre le score dans un fichier csv
+    with open("lsh_vote.csv", "a") as f:
+        f.write(f"{d.taille_nuage},{k},{nb_tables},{nb_probes_coef},{q},{score/q}\n")
+
+    # return score / q
+
+
 if __name__ == "__main__":
     # curse_of_dim(nb_queries=10)
     # linear_vs_kd("./image_data/jpg2", k=10)
     # draw_graph(    "nb_tables", "nb_probes_coef", "lsh_avg_query_time", log_x=False, moyenne=False)
     # affiche_curse_of_dim()
-    kd_build_time("./image_data/jpg2")
+    # kd_build_time("./image_data/jpg2")
     # eval_linear("./image_data/jpg2")
     # affiche_lineaire()
+    lsh_vote("./image_data/Wonders_of_World", 10, 30, 20, q=100)
