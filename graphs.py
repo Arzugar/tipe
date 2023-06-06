@@ -109,7 +109,7 @@ def eval_linear(datapath, k=10, q=30):
         datapath,
         auto_init=True,
         verbose=False,
-        nb_descr_per_img=20000,
+        nb_descr_per_img=nb_descr_val[-1],
         normalise=False,
         center=False,
         reverse_index=False,
