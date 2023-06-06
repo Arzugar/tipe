@@ -379,5 +379,5 @@ if __name__ == "__main__":
     # draw_graph("nb_descr", "kd_build_time", "", log_x=False, moyenne=True)
     # affiche_curse_of_dim()
     # kd_build_time("./image")
-    # eval_linear("./image_data/jpg2")
-    affiche_lineaire()
+    eval_linear("./image_data/jpg2")
+    # affiche_lineaire()
