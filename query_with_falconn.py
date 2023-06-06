@@ -66,12 +66,12 @@ if __name__ == "__main__":
     dpath = "./image_data/very_small"
     d = Database(dpath, nb_descr_per_img=10)
     index = falconn_init_index(d)
-    query_im = d.images[0]
-    print(query_im.name)
-    des = query_im.descr
+    query = d.images[0]
+    print(query.name)
+    des = query.descr
 
     r = falconn_query_image(
-        index, query_im, 10, {"num_probes": 20 * falconn_number_of_tables}
+        index, query, 10, {"num_probes": 20 * falconn_number_of_tables}
     )
     print(np.round(r[0][0], 2))
     print(r[1][0])

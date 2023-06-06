@@ -253,6 +253,18 @@ class Database:
                 self.array_of_descr[i] = d
                 i += 1
 
+    def simple_reverse_index(self, descr_id):
+        # calcule la somme cumulée du nombre de descripteurs de chaque image
+        # et en déduit à laquelle appartient le descripteur
+        assert descr_id < self.taille_nuage
+
+        cumul = 0
+        for im in self.images:
+            cumul += im.nb_descr
+            if cumul > descr_id:
+                return im
+        assert False
+
     # détermine l'image associée au descripteur indexé descr_id
 
     def image_of_descr_id(self, descr_id):

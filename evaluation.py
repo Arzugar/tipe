@@ -67,13 +67,13 @@ if __name__ == "__main__":
                 total_query_time = 0
 
                 for _ in range(sample_size):
-                    query_im = rd.choice(d.images)
+                    query = rd.choice(d.images)
                     # détermine l'image associée
 
                     start_time = time.time()
                     result = query_generic(
                         d,
-                        query_im,
+                        query,
                         falconn_query_image,
                         index,
                         descr_k=descr_k,
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
                     total_query_time += time.time() - start_time
                     if len(result) > 0:
-                        score = 1 if result[0][0].group_id == query_im.group_id else 0
+                        score = 1 if result[0][0].group_id == query.group_id else 0
                         total_score += score
 
                 avg_score = total_score / sample_size

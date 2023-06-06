@@ -39,10 +39,10 @@ if __name__ == "__main__":
     dpath = "./image_data/very_small"
     d = Database(dpath, nb_descr_per_img=10)
     index = ocv_init_index(d)
-    query_im = d.images[2]
-    print(query_im.name)
-    des = query_im.descr
+    query = d.images[2]
+    print(query.name)
+    des = query.descr
 
-    r = ocv_query_search(index, query_im, 10, None)
+    r = ocv_query_search(index, query, 10, None)
     print(r[0][0])
     print(r[1][0])
