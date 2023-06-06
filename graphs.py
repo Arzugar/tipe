@@ -104,7 +104,6 @@ def eval_linear(datapath, k=10, q=30):
         2048,
         4096,
     ]
-    nb_descr_effective_val = []
     d = Database(
         datapath,
         auto_init=True,
@@ -120,11 +119,9 @@ def eval_linear(datapath, k=10, q=30):
 
     for nb_descr in nb_descr_val:
         t = linear_search_time_basic_point_set(d.array_of_descr, nb_descr, q, k)
-        nb_descr_effective_val.append(d.taille_nuage)
         print("done for ", nb_descr)
-
-        with open("linear_vs_kd.csv", "a") as f:
-            f.write(f"{d.taille_nuage},{t}\n")
+        with open("eval_linear.csv", "a") as f:
+            f.write(f"{nb_descr*len(d.images)},{t}\n")
 
 
 def eval_linear_vs_kd(verbose: bool = False):
@@ -382,5 +379,5 @@ if __name__ == "__main__":
     # draw_graph("nb_descr", "kd_build_time", "", log_x=False, moyenne=True)
     # affiche_curse_of_dim()
     # kd_build_time("./image")
-    eval_linear("./image_data/jpg2")
-    # affiche_lineaire()
+    # eval_linear("./image_data/jpg2")
+    affiche_lineaire()
