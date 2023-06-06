@@ -56,9 +56,9 @@ def linear_search_time_basic_point_set(point_set, nb_points, q: int, k: int) -> 
 
 # recherche linéaire en fonction du nombre de points, utilisant les kd trees de scipy
 # moyenne le temps de recherche sur q, un entier requêtes aléatoires
-def kd_trees_search_time(d: Database, q: int, k: int) -> float:
-    queries = rd.choices(d.array_of_descr, k=q)
-    kd_tree_index = scipy_init_index(d)
+def kd_trees_search_time(point_set, nb_points, q: int, k: int) -> float:
+    queries = rd.choices(point_set, k=q)
+    kd_tree_index = scipy_init_index(point_set[:nb_points])
     t1 = timeit.default_timer()
     for query in queries:
         scipy_query_descr(kd_tree_index, query, k)
@@ -69,29 +69,32 @@ def kd_trees_search_time(d: Database, q: int, k: int) -> float:
 # charge la base de donnée et effectue les recherches linéaires et avec les kd trees de scipy
 # renvoie les temps moyens de recherche pour chaque méthode, pour chaque nombre de points
 def linear_vs_kd(datapath, k: int, q: int = 30):
-    nb_descr_val = [256, 512, 1024, 2048, 4096, 5000, 6000, 7000, 8000, 9000, 10000]
+    nb_descr_val = [256, 512, 1024, 2048, 4096]
     nb_descr_effective_val = []
     linear_times = []
     kd_tree_time = []
+    d = Database(
+        datapath,
+        auto_init=True,
+        verbose=False,
+        nb_descr_per_img=nb_descr_val[-1],
+        normalise=False,
+        center=False,
+        reverse_index=False,
+    )
+
     for nb_descr in nb_descr_val:
-        d = Database(
-            datapath,
-            auto_init=True,
-            verbose=False,
-            nb_descr_per_img=nb_descr,
-            normalise=False,
-            center=False,
-            reverse_index=False,
-        )
         linear_times.append(linear_search_time_basic(d, q, k))
-        kd_tree_time.append(kd_trees_search_time(d, q, k))
+        kd_tree_time.append(kd_trees_search_time(d.array_of_descr, nb_descr, q, k))
         nb_descr_effective_val.append(d.taille_nuage)
         print("done for ", nb_descr)
-        # print("linear times : ", linear_times, sep="\n")
-        # print("kd-tree times : ", kd_tree_time, sep="\n")
-        # print("nb_descr_effective_val : ", nb_descr_effective_val, sep="\n")
 
-    return linear_times, kd_tree_time, nb_descr_effective_val
+    with open("linear_vs_kd.csv", "a") as f:
+        f.write("nb_descr_effective,linear_time,kd_tree_time\n")
+        for i in range(len(nb_descr_effective_val)):
+            f.write(
+                f"{nb_descr_effective_val[i]},{linear_times[i]},{kd_tree_time[i]}\n"
+            )
 
 
 # évalue les temps de recherche linéaire en fonction du nombre de points
@@ -124,31 +127,33 @@ def eval_linear(datapath, k=10, q=30):
             f.write(f"{nb_descr*len(d.images)},{t}\n")
 
 
-def eval_linear_vs_kd(verbose: bool = False):
-    assert len(sys.argv) == 4
-    datapath = sys.argv[1]
-    k = int(sys.argv[2])
-    q = int(sys.argv[3])
-    linear_times, kd_tree_time, nb_descr_effective_val = linear_vs_kd(datapath, k, q)
-    with open("linear_vs_kd.csv", "a") as f:
-        f.write("nb_descr_effective,linear_time,kd_tree_time\n")
-        for i in range(len(nb_descr_effective_val)):
-            f.write(
-                f"{nb_descr_effective_val[i]},{linear_times[i]},{kd_tree_time[i]}\n"
-            )
-    if verbose:
-        # affiche les résultats dans deux graphiques cote à cote
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        fig.suptitle("Linear vs KD-tree")
-        ax1.plot(nb_descr_effective_val, linear_times)
-        ax1.set_title("Linear")
-        ax1.set_xlabel("nb_descr_effective")
-        ax1.set_ylabel("time")
-        ax2.plot(nb_descr_effective_val, kd_tree_time)
-        ax2.set_title("KD-tree")
-        ax2.set_xlabel("nb_descr_effective")
-        ax2.set_ylabel("time")
-        plt.show()
+def affiche_linear_vs_kd():
+    # affiche les résultats dans deux graphiques cote à cote
+    nb_descr_effective_val = []
+    linear_times = []
+    kd_tree_times = []
+    with open("linear_vs_kd.csv", "r") as f:
+        # ignore la premières lignes
+        f.readline()
+
+        for line in f:
+            nb_descr_effective, linear_time, kd_tree_time = line.split(",")
+            nb_descr_effective_val.append(int(nb_descr_effective))
+            linear_times.append(float(linear_time))
+            kd_tree_times.append(float(kd_tree_time))
+
+    # affiche les résultats dans un graphique
+    plt.subplot(1, 2, 1)
+    plt.scatter(nb_descr_effective_val, linear_times)
+    plt.xlabel("nombre de points")
+    plt.ylabel("temps (s)")
+    plt.title("temps de recherche linéaire")
+    plt.subplot(1, 2, 2)
+    plt.scatter(nb_descr_effective_val, kd_tree_times)
+    plt.xlabel("nombre de points")
+    plt.ylabel("temps (s)")
+    plt.title("temps de recherche avec kd trees")
+    plt.show()
 
 
 # charge les données de resultats_num.csv, ne conserve que celle pour nb_descr = 2048
@@ -375,9 +380,9 @@ def affiche_lineaire():
 
 if __name__ == "__main__":
     # curse_of_dim(nb_queries=10)
-    # eval_linear_vs_kd(verbose=False)
+    linear_vs_kd("./image_data/jpg2", k=10)
     # draw_graph("nb_descr", "kd_build_time", "", log_x=False, moyenne=True)
     # affiche_curse_of_dim()
     # kd_build_time("./image")
-    eval_linear("./image_data/jpg2")
+    # eval_linear("./image_data/jpg2")
     # affiche_lineaire()
