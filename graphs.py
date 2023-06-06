@@ -103,13 +103,6 @@ def eval_linear(datapath, k=10, q=30):
         1024,
         2048,
         4096,
-        5000,
-        6000,
-        7000,
-        8000,
-        9000,
-        10000,
-        20000,
     ]
     nb_descr_effective_val = []
     d = Database(
