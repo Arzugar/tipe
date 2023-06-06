@@ -223,6 +223,6 @@ def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 10**4):
 
 if __name__ == "__main__":
     # curse_of_dim(nb_queries=20)
-    eval_linear_vs_kd(verbose=True)
+    eval_linear_vs_kd(verbose=False)
     # draw_graph("nb_tables", "nb_probes_ceof", "score")
     # plt.show()
