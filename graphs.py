@@ -33,7 +33,7 @@ def scipy_search_time(d: Database, q: int, k: int) -> float:
 # charge la base de donnée et effectue les recherches linéaires et avec les kd trees de scipy
 # renvoie les temps moyens de recherche pour chaque méthode, pour chaque nombre de points
 def linear_vs_scipy(datapath, k: int, q: int = 30):
-    nb_descr_val = [5000, 6000, 7000, 8000, 9000, 10000, 20000, 30000]
+    nb_descr_val = [256, 5000, 6000, 7000, 8000, 9000, 10000, 20000, 30000]
     nb_descr_effective_val = []
     linear_times = []
     scipy_times = []
