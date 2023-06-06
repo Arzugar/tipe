@@ -212,7 +212,7 @@ def draw_graph(
                     "nb_descriptors": int(nb_descriptors),
                     "k": int(k),
                     "nb_tables": int(nb_tables),
-                    "nb_probes_ceof": int(nb_probes_ceof),
+                    "nb_probes_coef": int(nb_probes_ceof),
                     "sample_size": int(sample_size),
                     "kd_build_time": float(kd_build_time),
                     "lsh_build_time": float(lsh_build_time),
@@ -225,7 +225,9 @@ def draw_graph(
     for d in data:
         if d["nb_descriptors"] == 2048 and d["k"] == 50:
             xs.append(d[x_val])
-            ys.append(d[y_val])
+            if y_val != "":
+                ys.append(d[y_val])
+
             if z_val != "":
                 zs.append(d[z_val])
 
@@ -250,17 +252,13 @@ def draw_graph(
     if z_val == "":
         # affiche une courbe 2D
         plt.scatter(xs, ys)
-        plt.xlabel(x_val)
-        plt.ylabel(y_val)
+        plt.xlabel("nombre de tables")
+        plt.ylabel("temps (s)")
+        plt.title(
+            "temps de construction de la structure lsh en fonction du nombre de tables"
+        )
 
     else:
-        # affiche une surface 3D
-        """fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        ax.plot_trisurf(xs, ys, zs)
-        ax.set_xlabel(x_val)
-        ax.set_ylabel(y_val)
-        ax.set_zlabel(z_val)"""
         # affiche un nuage de points 3D
 
         fig = plt.figure()
@@ -279,9 +277,12 @@ def draw_graph(
 
 # affiche le temps de construction des arbres k dimensionels en fonction du nombre de vecteurs de la base de données
 def kd_build_time(datapath):
-    nb_descr_val = [256, 512, 1024, 2048, 4096, 5000, 6000, 7000, 8000, 9000, 10000]
+    nb_descr_val = [256, 512, 1024, 1500, 2048, 3000, 4096]
     nb_descr_effective_val = []
     kd_build_time = []
+    with open("kd_build_time.csv", "a") as f:
+        f.write("nb_descr_effective,kd_build_time\n")
+
     for nb_descr in nb_descr_val:
         d = Database(
             datapath,
@@ -299,15 +300,10 @@ def kd_build_time(datapath):
 
         nb_descr_effective_val.append(d.taille_nuage)
         print("done for ", nb_descr)
-        # print("linear times : ", linear_times, sep="\n")
-        # print("kd-tree times : ", kd_tree_time, sep="\n")
-        # print("nb_descr_effective_val : ", nb_descr_effective_val, sep="\n")
-
-    # génère le graphique
-    plt.scatter(nb_descr_effective_val, kd_build_time)
-    plt.xlabel("nb_descr_effective")
-    plt.ylabel("time")
-    plt.show()
+        # sauvegarde les résultats dans un fichier csv
+        with open("kd_build_time.csv", "a") as f:
+            for i in range(len(nb_descr_effective_val)):
+                f.write(f"{nb_descr_effective_val[i]},{kd_build_time[i]}\n")
 
 
 # evalue les temps moyens de recherche avec des kd trees pour des vecteurs aléatoires de dimension 2 à 2048
@@ -380,9 +376,9 @@ def affiche_lineaire():
 
 if __name__ == "__main__":
     # curse_of_dim(nb_queries=10)
-    linear_vs_kd("./image_data/jpg2", k=10)
-    # draw_graph("nb_descr", "kd_build_time", "", log_x=False, moyenne=True)
+    # linear_vs_kd("./image_data/jpg2", k=10)
+    # draw_graph(    "nb_tables", "nb_probes_coef", "lsh_avg_query_time", log_x=False, moyenne=False)
     # affiche_curse_of_dim()
-    # kd_build_time("./image")
+    kd_build_time("./image_data/jpg2")
     # eval_linear("./image_data/jpg2")
     # affiche_lineaire()
