@@ -90,7 +90,11 @@ class Image:
         img = cv.imread(self.path)
 
         # reduit = cv.cvtColor(img, cv.CV_32F)
-        grayscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        try:
+            grayscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        except Exception as e:
+            print("image qui pose problème : ", self.path)
+            raise e
 
         sift = cv.SIFT_create(nfeatures=nfeatures)
 

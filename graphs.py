@@ -393,13 +393,15 @@ def second_closest_ratio_test(
 # pour chacun des descripteurs de cette image on en trouve les k plus proches voisins
 # puis chaque descripteur ainsi trouvé vote pour la classe de l'image à laquelle il appartient
 # l'image qui a le plus de votes est choisie comme résultat
-def lsh_vote(datapath, k: int, nb_tables: int, nb_probes_coef: int, q: int = 30):
+def lsh_vote(
+    datapath, nb_descr, k: int, nb_tables: int, nb_probes_coef: int, q: int = 30
+):
     # on charge la base de données
     d = Database(
         datapath,
         auto_init=True,
         verbose=False,
-        nb_descr_per_img=512,
+        nb_descr_per_img=nb_descr,
         normalise=True,
         center=True,
         reverse_index=False,
@@ -413,7 +415,7 @@ def lsh_vote(datapath, k: int, nb_tables: int, nb_probes_coef: int, q: int = 30)
     lsh_index = falconn_init_index(d, params=params)
     # on effectue les requêtes
     score = 0
-    for query in queries:
+    for query in tqdm(queries):
         distances, neighbors = falconn_query_image(
             lsh_index, query, k, {"num_probes": nb_probes_coef * nb_tables}
         )
@@ -448,6 +450,31 @@ def lsh_vote(datapath, k: int, nb_tables: int, nb_probes_coef: int, q: int = 30)
     # return score / q
 
 
+def affiche_kd_build_time():
+    nombre_de_points = []
+    temps_de_construction = []
+    with open("kd_build_time.csv", "r") as f:
+        # ignore la première lignes
+        f.readline()
+
+        for line in f:
+            n, time = line.split(",")
+            nombre_de_points.append(int(n))
+            temps_de_construction.append(float(time))
+
+    plt.scatter(nombre_de_points, temps_de_construction)
+    plt.xlabel("nombre de points")
+    plt.ylabel("temps (s)")
+    plt.title("temps de construction des kd trees")
+    plt.show()
+
+
+def eval_lsh_vote():
+    for nb_descr in [10, 50, 100, 256, 512, 600, 700, 800, 900, 1024, 2048]:
+        for k in range(2, 30):
+            lsh_vote("./image_data/Wonders_of_World", nb_descr, k, 30, 20, q=100)
+
+
 if __name__ == "__main__":
     # curse_of_dim(nb_queries=10)
     # linear_vs_kd("./image_data/jpg2", k=10)
@@ -456,4 +483,6 @@ if __name__ == "__main__":
     # kd_build_time("./image_data/jpg2")
     # eval_linear("./image_data/jpg2")
     # affiche_lineaire()
-    lsh_vote("./image_data/Wonders_of_World", 10, 30, 20, q=100)
+    # lsh_vote("./image_data/Wonders_of_World", 512, 2, 30, 20, q=100)
+    eval_lsh_vote()
+    # affiche_kd_build_time()
