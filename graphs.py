@@ -68,33 +68,28 @@ def kd_trees_search_time(point_set, nb_points, q: int, k: int) -> float:
 
 # charge la base de donnée et effectue les recherches linéaires et avec les kd trees de scipy
 # renvoie les temps moyens de recherche pour chaque méthode, pour chaque nombre de points
-def linear_vs_kd(datapath, k: int, q: int = 30):
-    nb_descr_val = [256, 512, 1024, 2048, 4096]
-    nb_descr_effective_val = []
-    linear_times = []
-    kd_tree_time = []
+def linear_vs_kd(datapath, k: int, q: int = 10):
     d = Database(
         datapath,
         auto_init=True,
         verbose=False,
-        nb_descr_per_img=nb_descr_val[-1],
+        nb_descr_per_img=4096,
         normalise=False,
         center=False,
         reverse_index=False,
     )
-
-    for nb_descr in nb_descr_val:
-        linear_times.append(linear_search_time_basic(d, q, k))
-        kd_tree_time.append(kd_trees_search_time(d.array_of_descr, nb_descr, q, k))
-        nb_descr_effective_val.append(d.taille_nuage)
-        print("done for ", nb_descr)
+    nb_points_val = np.linspace(10, 2 * 10**6, 50, dtype=int)
 
     with open("linear_vs_kd.csv", "a") as f:
         f.write("nb_descr_effective,linear_time,kd_tree_time\n")
-        for i in range(len(nb_descr_effective_val)):
-            f.write(
-                f"{nb_descr_effective_val[i]},{linear_times[i]},{kd_tree_time[i]}\n"
-            )
+
+    for nb_points in nb_points_val:
+        lt = linear_search_time_basic(d, q, k)
+        kd_t = kd_trees_search_time(d.array_of_descr, nb_points, q, k)
+        print("done for ", nb_points)
+
+        with open("linear_vs_kd.csv", "a") as f:
+            f.write(f"{nb_points},{lt},{kd_t}\n")
 
 
 # évalue les temps de recherche linéaire en fonction du nombre de points
@@ -308,13 +303,14 @@ def kd_build_time(datapath):
 
 # evalue les temps moyens de recherche avec des kd trees pour des vecteurs aléatoires de dimension 2 à 2048
 # affiche les résultats dans un graphique
-def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 10**6):
-    vector_sizes = [600, 700, 800, 900]
+def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 5 * 10**5):
+    vector_sizes = np.logspace(1, 12, 50, base=2, dtype=int)
     times = []
     # génère un nuage de point aléatoire, uniformément choisits dans [0, 1]^vector_size
     with open("curse_of_dim.csv", "a") as f:
         f.write("vector_size,time\n")
     for vector_size in vector_sizes:
+        # vector_size = int(vector_size)
         # génère un nuage de vecteurs aléatoires de dimension vector_size
         # et effectue des recherches avec des kd trees
         nuage = np.random.rand(taille_nuage, vector_size)
@@ -337,9 +333,7 @@ def curse_of_dim(nb_queries: int = 30, taille_nuage: int = 10**6):
 def affiche_curse_of_dim():
     vector_sizes = []
     times = []
-    with open("curse_of_dim.csv", "r") as f:
-        # ignore les 2 premières lignes
-        f.readline()
+    with open("curse_of_dim_2.csv", "r") as f:
         f.readline()
 
         for line in f:
@@ -477,12 +471,13 @@ def eval_lsh_vote():
 
 if __name__ == "__main__":
     # curse_of_dim(nb_queries=10)
-    # linear_vs_kd("./image_data/jpg2", k=10)
+    linear_vs_kd("./image_data/jpg2", k=10)
     # draw_graph(    "nb_tables", "nb_probes_coef", "lsh_avg_query_time", log_x=False, moyenne=False)
     # affiche_curse_of_dim()
     # kd_build_time("./image_data/jpg2")
     # eval_linear("./image_data/jpg2")
     # affiche_lineaire()
     # lsh_vote("./image_data/Wonders_of_World", 512, 2, 30, 20, q=100)
-    eval_lsh_vote()
+    # eval_lsh_vote()
     # affiche_kd_build_time()
+    # affiche_linear_vs_kd()
