@@ -56,7 +56,7 @@ def linear_search_time_basic_point_set(point_set, nb_points, q: int, k: int) -> 
 
 # recherche linéaire en fonction du nombre de points, utilisant les kd trees de scipy
 # moyenne le temps de recherche sur q, un entier requêtes aléatoires
-def kd_trees_search_time(point_set, nb_points, q: int, k: int) -> float:
+def kd_trees_search_time_point_set(point_set, nb_points, q: int, k: int) -> float:
     queries = rd.choices(point_set, k=q)
     kd_tree_index = cKDTree(point_set[:nb_points])
     t1 = timeit.default_timer()
@@ -78,14 +78,14 @@ def linear_vs_kd(datapath, k: int, q: int = 10):
         center=False,
         reverse_index=False,
     )
-    nb_points_val = np.linspace(10, 2 * 10**6, 50, dtype=int)
+    nb_points_val = np.linspace(10, 2 * 10**6, 20, dtype=int)
 
     with open("linear_vs_kd.csv", "a") as f:
         f.write("nb_descr_effective,linear_time,kd_tree_time\n")
 
     for nb_points in nb_points_val:
-        lt = linear_search_time_basic(d, q, k)
-        kd_t = kd_trees_search_time(d.array_of_descr, nb_points, q, k)
+        lt = linear_search_time_basic_point_set(d.array_of_descr, nb_points, q, k)
+        kd_t = kd_trees_search_time_point_set(d.array_of_descr, nb_points, q, k)
         print("done for ", nb_points)
 
         with open("linear_vs_kd.csv", "a") as f:
